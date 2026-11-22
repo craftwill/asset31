@@ -10,7 +10,8 @@ export_credentials.cfg
 # Rebuild: godot --headless --path game --export-release "Windows Desktop" ../build/Asset31.exe
 build/
 # Record:  godot --path game --fixed-fps 30 --write-movie <file>.avi -- --tour
-review/
+review/*
+!review/feedback/
 *.avi
 game/shots/
 
