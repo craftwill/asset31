@@ -1,0 +1,109 @@
+{
+  "units": "metres",
+  "notes": "Logical coordinates. y is height above the planet's original surface. The Mantle roof is at ~60000 m. Site rects are stack-local [x0, z0, x1, z1]. Ambience boxes are logical [x0, y0, z0, x1, y1, z1].",
+  "mantle_roof_altitude": 60000,
+  "stacks": [
+    {
+      "id": "STK-0412",
+      "name": "Home stack",
+      "palette": "warm",
+      "origin": [0, 41000, 0],
+      "size": [6000, 900, 6000],
+      "wall_thickness": 40,
+      "below_depth": 6000,
+      "above_height": 6000,
+      "slab_thickness": 60,
+      "pillars": { "spacing": 1000, "size": 50 },
+      "opening": { "side": "+x", "width": 600, "height": 420 },
+      "floors": [
+        { "id": "F-0412-077", "name": "Floor 77", "elevation": 0, "height": 900 }
+      ],
+      "districts": [
+        { "id": "D-HOME", "kind": "residential", "center": [-1500, 0], "radius": 420 }
+      ],
+      "sites": [
+        { "id": "SITE-HOME", "kind": "home", "rect": [-1493, 69.5, -1444.5, 118] },
+        { "id": "SITE-MARKET", "kind": "market", "rect": [-1900, -31.25, -1100, 31.25], "no_lamps": true },
+        { "id": "SITE-PIPES-A", "kind": "pipes", "rect": [1100, -31, 1690, 31] },
+        { "id": "SITE-FOUNDRY", "kind": "foundry", "rect": [1690, -70, 2110, 70], "no_lamps": true },
+        { "id": "SITE-PIPES-B", "kind": "pipes", "rect": [2110, -31, 2740, 31] },
+        { "id": "SITE-GATE-E", "kind": "gate_departure", "rect": [2740, -290, 3000, 290] }
+      ],
+      "landmarks": [
+        { "id": "LM-0412-GATE", "name": "East edge gate", "position": [3000, 0, 0] },
+        { "id": "LM-0412-FOUNDRY", "name": "Foundry hall", "position": [1900, 0, 0] },
+        { "id": "LM-0412-MARKET", "name": "Market street", "position": [-1500, 0, 0] }
+      ]
+    },
+    {
+      "id": "STK-0413",
+      "name": "Neighbouring stack",
+      "palette": "cool",
+      "origin": [9080, 41000, 0],
+      "size": [6000, 900, 6000],
+      "wall_thickness": 40,
+      "below_depth": 6000,
+      "above_height": 6000,
+      "slab_thickness": 60,
+      "pillars": { "spacing": 1000, "size": 50 },
+      "opening": { "side": "-x", "width": 600, "height": 420 },
+      "floors": [
+        { "id": "F-0413-077", "name": "Floor 77", "elevation": 0, "height": 900 }
+      ],
+      "districts": [],
+      "sites": [
+        { "id": "SITE-GATE-W", "kind": "gate_arrival", "rect": [-3000, -290, -2740, 290] }
+      ],
+      "landmarks": [
+        { "id": "LM-0413-GATE", "name": "West arrival gate", "position": [-3000, 0, 0] }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "BR-077-A",
+      "kind": "bridge",
+      "name": "Floor 77 span",
+      "from": "STK-0412",
+      "to": "STK-0413",
+      "a": [3040, 41000, 0],
+      "b": [6040, 41000, 0],
+      "width": 12,
+      "deck_thickness": 2,
+      "pier_spacing": 300,
+      "pier_depth": 6000,
+      "lamp_spacing": 60,
+      "state": "open"
+    }
+  ],
+  "structures": [
+    { "id": "EL-GAP-1", "kind": "elevator_shaft", "position": [4050, 41000, 720], "size": 30, "depth": 6000, "height": 4000, "cars": 3 },
+    { "id": "EL-GAP-2", "kind": "elevator_shaft", "position": [5250, 41000, -1150], "size": 30, "depth": 6000, "height": 4000, "cars": 2 }
+  ],
+  "ambience_zones": [
+    { "profile": "room", "box": [-1491.6, 40999.5, 112.1, -1488.6, 41003, 116.6] },
+    { "profile": "roof", "box": [-1493, 41038, 95, -1470, 41060, 118] },
+    { "profile": "market", "box": [-1900, 40990, -31, -1100, 41060, 31] },
+    { "profile": "residential", "box": [-1950, 40990, -450, -1050, 41200, 450] },
+    { "profile": "foundry", "box": [1700, 40990, -60, 2100, 41064, 60] },
+    { "profile": "industrial", "box": [1100, 40990, -700, 2740, 41300, 700] },
+    { "profile": "edge", "box": [2740, 40990, -400, 3040, 41450, 400] },
+    { "profile": "gap", "box": [3040, 39000, -3000, 6040, 43000, 3000] },
+    { "profile": "arrival", "box": [6040, 40990, -400, 6400, 41450, 400] }
+  ],
+  "ambience_profiles": {
+    "city": { "layers": { "rumble": -10, "vent": -22 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.5 } },
+    "residential": { "layers": { "rumble": -12, "vent": -21 }, "reverb": { "room": 0.85, "wet": 0.3, "damping": 0.55 } },
+    "room": { "layers": { "rumble": -17, "room_tone": -13, "vent": -32 }, "reverb": { "room": 0.12, "wet": 0.12, "damping": 0.85 } },
+    "roof": { "layers": { "rumble": -9, "wind": -21, "vent": -27 }, "reverb": { "room": 0.95, "wet": 0.25, "damping": 0.5 } },
+    "market": { "layers": { "rumble": -13, "market": -10, "vent": -25 }, "reverb": { "room": 0.7, "wet": 0.3, "damping": 0.6 } },
+    "industrial": { "layers": { "rumble": -8, "machinery": -19, "vent": -19 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.45 } },
+    "foundry": { "layers": { "rumble": -8, "machinery": -13, "vent": -25 }, "reverb": { "room": 0.95, "wet": 0.5, "damping": 0.35 } },
+    "edge": { "layers": { "rumble": -7, "wind": -13, "machinery": -31 }, "reverb": { "room": 0.95, "wet": 0.4, "damping": 0.4 } },
+    "gap": { "layers": { "rumble": -6, "wind": -9 }, "reverb": { "room": 1.0, "wet": 0.45, "damping": 0.3 } },
+    "arrival": { "layers": { "rumble": -9, "wind": -19, "vent": -21 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.5 } }
+  },
+  "player_start": { "position": [-1490.3, 41000.05, 112.7], "yaw_deg": 180 },
+  "route": [[-1491.0, 112.9], [-1494.5, 112.9], [-1500.0, 112.9], [-1500.0, 0.0], [6200.0, 0.0]],
+  "arrival_point": [6200, 41000, 0]
+}

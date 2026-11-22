@@ -1,0 +1,12 @@
+# Normalise text to LF (Godot's native line endings).
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.wav binary
+*.ogg binary
+*.mp4 binary
+*.exe binary
+*.pck binary

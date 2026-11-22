@@ -1,0 +1,26 @@
+# --- Godot -------------------------------------------------------------
+# Editor/import cache (regenerated on open). Keep *.import and *.uid files.
+.godot/
+game/.godot/
+# Export credentials may contain secrets.
+export_credentials.cfg
+*.translation
+
+# --- Build outputs & recordings (large, regenerable) --------------------
+# Rebuild: godot --headless --path game --export-release "Windows Desktop" ../build/Asset31.exe
+build/
+# Record:  godot --path game --fixed-fps 30 --write-movie <file>.avi -- --tour
+review/
+*.avi
+game/shots/
+
+# --- Third-party reference footage (not redistributed) -----------------
+reference_images/ref_video.mp4
+
+# --- OS / editors --------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+.vscode/
+.idea/
