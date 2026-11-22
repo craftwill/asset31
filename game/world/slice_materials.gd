@@ -79,9 +79,15 @@ static func get_mat(id: StringName) -> Material:
 		# --- facades
 		&"building":
 			m = _make(FACADE, _facade({ "base_sink": 1.0 }))
+		&"building_small":
+			m = _make(FACADE, _facade({ "base_sink": 1.0, "fade_start": 3200.0, "fade_end": 4000.0 }))
 		&"building_cool":
 			m = _make(FACADE, _facade({ "base_sink": 1.0, "window_color": Color(0.72, 0.8, 0.95),
 				"window_color_alt": Color(1.0, 0.7, 0.4), "alt_fraction": 0.04, "tint": Color(0.8, 0.85, 0.95) }))
+		&"building_small_cool":
+			m = _make(FACADE, _facade({ "base_sink": 1.0, "window_color": Color(0.72, 0.8, 0.95),
+				"window_color_alt": Color(1.0, 0.7, 0.4), "alt_fraction": 0.04, "tint": Color(0.8, 0.85, 0.95),
+				"fade_start": 3200.0, "fade_end": 4000.0 }))
 		&"shopfront":
 			m = _make(FACADE, _facade({ "base_sink": 1.0, "shopfront": 1.0, "lit_fraction": 0.3 }))
 		&"authored_facade":
@@ -89,14 +95,18 @@ static func get_mat(id: StringName) -> Material:
 		&"authored_concrete":
 			m = _make(FACADE, _facade({ "use_world": 1.0, "style_override": 1.0, "lit_fraction": 0.08 }))
 		&"stack_wall":
-			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 2.0, "tex_sizes": Vector3(2.5, 8.0, 8.0) }))
+			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 2.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
+				"no_snap": 1.0, "floor_bands": 1.0, "interior_enabled": 0.0 }))
 		&"stack_wall_cool":
 			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 1.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
-				"window_color": Color(0.85, 0.9, 1.0), "tint": Color(0.8, 0.85, 0.95) }))
+				"window_color": Color(0.85, 0.9, 1.0), "tint": Color(0.8, 0.85, 0.95),
+				"no_snap": 1.0, "floor_bands": 1.0, "interior_enabled": 0.0 }))
 		&"ceiling":
-			m = _make(FACADE, _facade({ "windows_enabled": 0.0, "ceiling_lights": 1.0, "roof_color": Color(0.09, 0.07, 0.06) }))
+			m = _make(FACADE, _facade({ "windows_enabled": 0.0, "ceiling_lights": 1.0, "roof_color": Color(0.09, 0.07, 0.06),
+				"no_snap": 1.0, "interior_enabled": 0.0 }))
 		&"industrial_wall":
-			m = _make(FACADE, _facade({ "use_world": 1.0, "style_override": 2.0, "windows_enabled": 0.0, "tint": Color(0.75, 0.7, 0.65) }))
+			m = _make(FACADE, _facade({ "use_world": 1.0, "style_override": 2.0, "windows_enabled": 0.0, "tint": Color(0.75, 0.7, 0.65),
+				"no_snap": 1.0, "interior_enabled": 0.0 }))
 		# --- ground
 		&"ground":
 			m = _make(GROUND, { "albedo_tex": tex(&"pavers"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime") })
@@ -106,11 +116,37 @@ static func get_mat(id: StringName) -> Material:
 		&"bridge_deck":
 			m = _make(GROUND, { "albedo_tex": tex(&"grating"), "side_tex": tex(&"metal_dark"), "grime_tex": tex(&"grime"),
 				"tex_size": 1.0, "wet_amount": 0.2 })
+		&"grass_floor":
+			m = _make(GROUND, { "albedo_tex": tex(&"fabric"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime"),
+				"tex_size": 2.4, "use_world": 1.0, "wet_amount": 0.05, "tint": Color(0.28, 0.62, 0.18) })
+		&"crust_rock":
+			m = _make(GROUND, { "albedo_tex": tex(&"concrete"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime"),
+				"tex_size": 7.0, "use_world": 1.0, "wet_amount": 0.12, "tint": Color(0.34, 0.26, 0.22) })
 		# --- textured surfaces
 		&"structure":
 			m = _make(SURFACE, _surface(&"metal_dark", 3.0, { "grime": 0.3 }))
+		&"structure_fade_near":
+			m = _make(SURFACE, _surface(&"metal_dark", 3.0, { "grime": 0.3, "fade_start": 700.0, "fade_end": 900.0 }))
+		&"structure_fade_mid":
+			m = _make(SURFACE, _surface(&"metal_dark", 3.0, { "grime": 0.3, "fade_start": 1000.0, "fade_end": 1350.0 }))
+		&"structure_fade_far":
+			m = _make(SURFACE, _surface(&"metal_dark", 3.0, { "grime": 0.3, "fade_start": 1400.0, "fade_end": 1800.0 }))
 		&"structure_world":
 			m = _make(SURFACE, _surface(&"metal_dark", 3.0, { "use_world": 1.0 }))
+		&"awning_rust":
+			m = _make(SURFACE, _surface(&"fabric", 1.2, { "tint": Color(0.65, 0.32, 0.22), "roughness_val": 0.95 }))
+		&"awning_dark":
+			m = _make(SURFACE, _surface(&"fabric", 1.2, { "tint": Color(0.36, 0.34, 0.30), "roughness_val": 0.95 }))
+		&"crop_green":
+			m = _make(SURFACE, _surface(&"fabric", 1.2, { "tint": Color(0.34, 0.96, 0.24), "roughness_val": 0.90, "specular_val": 0.08 }))
+		&"crop_dark":
+			m = _make(SURFACE, _surface(&"fabric", 1.2, { "tint": Color(0.20, 0.68, 0.16), "roughness_val": 0.94, "specular_val": 0.06 }))
+		&"preserve_wall":
+			m = _make(SURFACE, _surface(&"panel", 6.0, { "use_world": 1.0, "tint": Color(0.92, 0.88, 0.78), "roughness_val": 0.90, "specular_val": 0.08, "no_snap": 1.0 }))
+		&"tree_trunk":
+			m = _make(SURFACE, _surface(&"wood", 1.2, { "tint": Color(0.32, 0.22, 0.14), "roughness_val": 0.95 }))
+		&"deer_coat":
+			m = _make(SURFACE, _surface(&"fabric", 1.0, { "tint": Color(0.76, 0.50, 0.32), "roughness_val": 0.92 }))
 		&"plate":
 			m = _make(SURFACE, _surface(&"plate", 0.9, { "use_world": 1.0, "roughness_val": 0.7, "specular_val": 0.25, "tint": Color(0.8, 0.78, 0.76) }))
 		&"wood":
@@ -157,7 +193,7 @@ static func get_mat(id: StringName) -> Material:
 		&"bulb":
 			m = _make(EMISSIVE, { "color": Color(1.0, 0.8, 0.5), "energy": 6.0 })
 		&"rail_glow":
-			m = _make(EMISSIVE, { "color": Color(1.0, 0.72, 0.25), "energy": 1.7 })
+			m = _make(EMISSIVE, { "color": Color(1.0, 0.72, 0.25), "energy": 1.7, "no_snap": 1.0, "min_px_y": 1.15 })
 		&"window_glow":
 			m = _make(EMISSIVE, { "color": Color(1.0, 0.7, 0.38), "energy": 2.2 })
 		&"sign_green":
@@ -170,6 +206,16 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(EMISSIVE, { "color": Color(1.0, 0.85, 0.4), "energy": 2.4 })
 		&"beacon_red":
 			m = _make(EMISSIVE, { "color": Color(1.0, 0.15, 0.1), "energy": 5.0 })
+		&"grow_magenta":
+			m = _make(EMISSIVE, { "color": Color(1.0, 0.44, 0.92), "energy": 3.4, "no_snap": 1.0 })
+		&"tram_headlamp":
+			m = _make(EMISSIVE, { "color": Color(1.0, 0.82, 0.48), "energy": 4.8 })
+		&"sky_panel":
+			m = _make(EMISSIVE, { "color": Color(1.0, 0.95, 0.82), "energy": 3.0, "no_snap": 1.0 })
+		&"water_beam":
+			m = _make(EMISSIVE, { "color": Color(0.74, 0.92, 1.0), "energy": 2.4, "no_snap": 1.0 })
+		&"drill_glow":
+			m = _make(EMISSIVE, { "color": Color(1.0, 0.48, 0.14), "energy": 4.5 })
 		&"container_rust":
 			m = _make(SURFACE, _surface(&"panel", 4.0, { "tint": Color(1.6, 0.9, 0.65) }))
 		&"container_teal":
@@ -184,6 +230,8 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(CORONA, { "color": COOL, "energy": 0.8 })
 		&"corona_molten":
 			m = _make(CORONA, { "color": Color(1.0, 0.45, 0.1), "energy": 1.4, "fade_start": 300.0, "fade_end": 1500.0 })
+		&"corona_magenta":
+			m = _make(CORONA, { "color": Color(1.0, 0.42, 0.90), "energy": 0.55, "fade_start": 180.0, "fade_end": 900.0 })
 		&"tube":
 			m = _make(TUBE, {})
 		&"molten":
@@ -325,4 +373,5 @@ static func clear_caches() -> void:
 	_unit_box = null
 	_quad = null
 	TextureFactory._cache.clear()
+	ItemDB.clear_caches()
 	Crowd._mesh = null

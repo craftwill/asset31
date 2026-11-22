@@ -14,7 +14,7 @@ var _target: Node3D
 func _ready() -> void:
 	env = Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.085, 0.055, 0.035)
+	env.background_color = Color(0.095, 0.058, 0.035)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.32, 0.22, 0.15)
 	env.ambient_light_energy = 0.75
@@ -22,7 +22,7 @@ func _ready() -> void:
 	env.tonemap_exposure = 1.05
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
-	env.fog_light_color = Color(0.17, 0.105, 0.06)
+	env.fog_light_color = Color(0.20, 0.118, 0.062)
 	env.fog_light_energy = 1.0
 	env.fog_density = 0.00022
 	env.fog_sky_affect = 1.0
@@ -34,9 +34,9 @@ func _ready() -> void:
 	env.volumetric_fog_ambient_inject = 0.6
 	env.volumetric_fog_temporal_reprojection_enabled = true
 	env.glow_enabled = true
-	env.glow_intensity = 0.35
+	env.glow_intensity = 0.28
 	env.glow_bloom = 0.0
-	env.glow_hdr_threshold = 1.3
+	env.glow_hdr_threshold = 1.4
 	env.adjustment_enabled = true
 	env.adjustment_contrast = 1.06
 	env.adjustment_saturation = 0.95
@@ -84,9 +84,12 @@ func _ready() -> void:
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	m.albedo_color = Color(1.0, 0.82, 0.58, 0.55)
+	m.albedo_color = Color(1.0, 0.82, 0.58, 0.45)
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+	m.distance_fade_min_distance = 1.6
+	m.distance_fade_max_distance = 3.8
 	q.material = m
 	_dust.draw_pass_1 = q
 	add_child(_dust)
@@ -95,6 +98,41 @@ func _ready() -> void:
 
 func follow(target: Node3D) -> void:
 	_target = target
+
+
+## Smoothly adapts atmospheric tint & floor mist datum between the dark Mantle
+## megastructure ("default"), the luminous Ecological Preserve 413-B ("preserve"),
+## and Asset 31's excavated planetary mining floor ("crust").
+func set_mood(mood: String, delta: float, instant := false) -> void:
+	if env == null:
+		return
+	var tgt_bg := Color(0.095, 0.058, 0.035)
+	var tgt_fog := Color(0.20, 0.118, 0.062)
+	var tgt_amb := Color(0.32, 0.22, 0.15)
+	var tgt_amb_e := 0.75
+	var tgt_fog_d := 0.00022
+	if mood == "preserve":
+		tgt_bg = Color(0.56, 0.55, 0.48)
+		tgt_fog = Color(0.64, 0.62, 0.54)
+		tgt_amb = Color(0.74, 0.74, 0.68)
+		tgt_amb_e = 1.05
+		tgt_fog_d = 0.0014
+		floor_logical_y = 41000.0
+	elif mood == "crust":
+		tgt_bg = Color(0.065, 0.038, 0.025)
+		tgt_fog = Color(0.18, 0.095, 0.048)
+		tgt_amb = Color(0.28, 0.18, 0.12)
+		tgt_amb_e = 0.65
+		tgt_fog_d = 0.0011
+		floor_logical_y = 0.0
+	else:
+		floor_logical_y = 41000.0
+	var k := 1.0 if instant else clampf(delta * 2.2, 0.0, 1.0)
+	env.background_color = env.background_color.lerp(tgt_bg, k)
+	env.fog_light_color = env.fog_light_color.lerp(tgt_fog, k)
+	env.ambient_light_color = env.ambient_light_color.lerp(tgt_amb, k)
+	env.ambient_light_energy = lerpf(env.ambient_light_energy, tgt_amb_e, k)
+	env.fog_density = lerpf(env.fog_density, tgt_fog_d, k)
 
 
 func _process(_delta: float) -> void:

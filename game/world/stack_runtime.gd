@@ -7,7 +7,7 @@ extends WorldAnchor
 const LOAD_RADIUS := 380.0
 const UNLOAD_RADIUS := 560.0
 const SMALL_BUILDING_HEIGHT := 40.0
-const SMALL_VIS_END := 2600.0
+const SMALL_VIS_END := 4200.0
 
 var def: Dictionary
 var layouts: Dictionary = {}   # Vector2i -> Array[building]
@@ -125,10 +125,10 @@ func _build_city() -> void:
 			var chunk := Node3D.new()
 			chunk.name = "Chunk_%d_%d" % [i, j]
 			city.add_child(chunk)
-			# Same buildings at every distance: small ones fade into fog far away,
-			# large silhouettes never disappear.
+			# Same buildings at every distance: small ones dither-fade into fog
+			# before culling, large silhouettes never disappear.
 			if not small.is_empty():
-				SliceMaterials.add_multimesh(chunk, small, building_mat(), SMALL_VIS_END)
+				SliceMaterials.add_multimesh(chunk, small, building_small_mat(), SMALL_VIS_END)
 			if not big.is_empty():
 				SliceMaterials.add_multimesh(chunk, big, building_mat())
 	SliceMaterials.add_multimesh(city, tiles, &"ground")
@@ -143,7 +143,7 @@ func _build_city() -> void:
 		if not lamps.has(key):
 			lamps[key] = []
 		lamps[key].append(p)
-	SliceMaterials.add_multimesh(city, poles, &"structure", 1500.0)
+	SliceMaterials.add_multimesh(city, poles, &"structure_fade_far", 1900.0)
 	SliceMaterials.add_multimesh(city, heads, &"lamp")
 	var glow: Array = []
 	for hd: Dictionary in heads:
@@ -193,6 +193,10 @@ func building_mat() -> StringName:
 	return &"building_cool" if is_cool() else &"building"
 
 
+func building_small_mat() -> StringName:
+	return &"building_small_cool" if is_cool() else &"building_small"
+
+
 func wall_mat() -> StringName:
 	return &"stack_wall_cool" if is_cool() else &"stack_wall"
 
@@ -208,6 +212,8 @@ func _build_sites() -> void:
 			"foundry": node = FoundrySite.build(self, site)
 			"gate_departure", "gate_arrival": node = GateSite.build(self, site)
 			"pipes": node = FoundrySite.build_pipes(self, site)
+			"hydroponics": node = HydroponicSite.build(self, site)
+			"preserve": node = PreserveSite.build(self, site)
 			_: push_error("Unknown site kind %s" % site.kind)
 		if node != null:
 			node.name = site.id

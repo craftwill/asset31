@@ -98,6 +98,14 @@ func _room() -> void:
 	_b(Vector3(1.4, 1.4, 44.35), Vector3(1.415, 1.95, 45.25), &"tally")
 	_b(Vector3(1.4, 1.45, 45.4), Vector3(1.42, 2.0, 45.9), &"poster_tree")
 	_b(Vector3(1.4, 1.08, 45.45), Vector3(1.42, 1.33, 45.85), &"note")
+	add_child(ReadableNote.create(
+		"NOTE-HOME", "Pinned Note",
+		"FLOOR 77 — STK-0412\n\n"
+		+ "Water pressure dropped again in the lower blocks.\n"
+		+ "Freight span BR-077-A across to STK-0413 is still open—3 km over the gap.\n"
+		+ "Pack tins and water from the cabinet before heading east through the foundry.\n"
+		+ "(Press [M] for the Floor 77 sector diagram, [F] for your work-lamp.)",
+		Vector3(1.44, 1.21, 45.65), PI * 0.5, "invisible"))
 	# Table, legs, crate seat, plate and cup.
 	_b(Vector3(3.0, 0.72, 44.4), Vector3(3.9, 0.78, 45.3), &"wood", m, true)
 	for lp in [Vector2(3.05, 44.45), Vector2(3.8, 44.45), Vector2(3.05, 45.2), Vector2(3.8, 45.2)]:
@@ -112,6 +120,11 @@ func _room() -> void:
 	# Bucket and a pipe running along the east wall.
 	SliceMaterials.add_cylinder(self, Vector3(4.05, 0.02, 46.7), Vector3(4.05, 0.32, 46.7), 0.15, &"metal_light", 8)
 	SliceMaterials.add_cylinder(self, Vector3(4.33, 0.9, 42.6), Vector3(4.33, 0.9, 47.1), 0.04, &"copper", 6)
+	# Lootable starter cabinet tucked against the east wall south of the table.
+	add_child(LootContainer.create(
+		"CONT-HOME-CABINET", "Shelter Cabinet", "cabinet",
+		Vector3(4.08, 0.03, 43.2), -PI * 0.5,
+		[["ration_tin", 2], ["condensate_can", 2], ["bandage_roll", 1]], 4, 3))
 	# Hanging bulb: the only light in the room (shadowed).
 	_b(Vector3(2.89, 2.25, 45.59), Vector3(2.91, 2.8, 45.61), &"structure")
 	_b(Vector3(2.85, 2.15, 45.55), Vector3(2.95, 2.25, 45.65), &"bulb")
@@ -163,6 +176,41 @@ func _courtyard() -> void:
 	_b(Vector3(14, 0.02, 3), Vector3(15.2, 1.2, 4.6), &"container_teal", _body)
 	_b(Vector3(15.6, 0.02, 3), Vector3(16.8, 1.2, 4.6), &"container_rust", _body)
 	_b(Vector3(3, 0.02, 18), Vector3(5, 0.45, 18.5), &"wood", _body)
+	# Lived-in courtyard & wall-base signs of use (tucked against walls, clear of routes).
+	_b(Vector3(6.3, 0.02, 5.2), Vector3(7.4, 0.85, 6.4), &"wood_dark", _body)
+	_b(Vector3(6.5, 0.85, 5.4), Vector3(7.2, 1.4, 6.1), &"wood")
+	SliceMaterials.add_cylinder(self, Vector3(6.7, 0.02, 7.6), Vector3(6.7, 0.92, 7.6), 0.3, &"container_rust", 8)
+	_b(Vector3(0.25, 0.02, 31.0), Vector3(0.95, 0.65, 32.1), &"wood_dark", _body)
+	_b(Vector3(0.3, 0.02, 32.3), Vector3(0.9, 0.35, 33.4), &"concrete", _body)
+	# Subtle localized lamp and diegetic label at the freight lift landing.
+	_b(Vector3(7.2, 2.55, 25.4), Vector3(7.6, 2.75, 26.0), &"lamp")
+	SliceMaterials.add_coronas(self, [Vector3(7.4, 2.55, 25.7)], 1.1)
+	var lift_l := SliceMaterials.make_lamp_light(SliceMaterials.WARM, 1.3, 9.0)
+	lift_l.position = Vector3(7.4, 2.35, 25.7)
+	add_child(lift_l)
+	SliceMaterials.add_sign(self, Vector3(7.35, 2.05, 27.4), "ROOF LIFT", 0.008, Color(1.0, 0.85, 0.55), PI)
+	# Lootable courtyard supply crate beside the freight lift landing.
+	add_child(LootContainer.create(
+		"CONT-COURTYARD-CRATE", "Courtyard Crate", "crate",
+		Vector3(12.2, 0.0, 25.8), 0.0,
+		[["water_flask", 1], ["fuse_cell", 1], ["brass_coil", 1]], 5, 4))
+	# Overhead laundry lines strung high across the side street (frame 575s lived-in rhythm).
+	var cloths: Dictionary = {}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5750
+	for ln in [[9.5, 22.0], [13.5, 56.0], [8.8, -18.0]]:
+		var ly: float = ln[0]
+		var lv: float = ln[1]
+		_b(Vector3(-13.2, ly - 0.02, lv - 0.02), Vector3(1.0, ly + 0.02, lv + 0.02), &"structure")
+		for i in 6:
+			var lu := -11.5 + i * 2.1 + rng.randf_range(-0.3, 0.3)
+			var mat: StringName = [&"cloth_beige", &"cloth_red", &"cloth_teal", &"fabric_dark"][rng.randi() % 4]
+			if not cloths.has(mat):
+				cloths[mat] = []
+			var lh := rng.randf_range(0.65, 1.15)
+			cloths[mat].append({ "c": Vector3(lu, ly - lh * 0.5, lv), "s": Vector3(rng.randf_range(0.55, 0.95), lh, 0.03) })
+	for mat: StringName in cloths:
+		SliceMaterials.add_multimesh(self, cloths[mat], mat)
 
 
 ## Side street lamps (frame 575s: sparse, warm, single heads).

@@ -27,8 +27,11 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var body := StaticBody3D.new()
 	add_child(body)
 	var shops: Array = []
-	var shop_lights: Array = []
 	var signs: Dictionary = {}
+	var awnings: Dictionary = {}
+	var stall_wood: Array = []
+	var stall_crates: Array = []
+	var stall_poles: Array = []
 	# Shop rows between side streets (block boundaries every 62.5 m).
 	var k := ceili((x0 + hw) / BLOCK)
 	while -hw + k * BLOCK + BLOCK <= x1 + 0.01:
@@ -54,18 +57,67 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 				var l := SliceMaterials.make_lamp_light(col, rng.randf_range(0.7, 1.4), 9.0)
 				l.position = Vector3(x + w * 0.5, 2.6, side * (STREET_HALF - 1.2))
 				add_child(l)
+				# Projecting shopfront awnings overhanging the sidewalk (ref 550s).
+				if rng.randf() < 0.62:
+					var amat: StringName = [&"awning_rust", &"awning_dark", &"cloth_beige"][rng.randi() % 3]
+					if not awnings.has(amat):
+						awnings[amat] = []
+					awnings[amat].append({
+						"c": Vector3(x + w * 0.5, 3.45, side * (STREET_HALF - 1.15)),
+						"s": Vector3(w - 1.2, 0.08, 2.2),
+						"r": Vector3(side * 0.14, 0.0, 0.0),
+					})
+				# Sparse sidewalk vendor stalls and stacked crates tucked against shopfronts
+				# (outer sidewalk only, keeping the central roadway and inner walk clear).
+				if rng.randf() < 0.32 and w > 9.0:
+					var sx := x + w * 0.5 + rng.randf_range(-1.5, 1.5)
+					var sz_p: float = side * (STREET_HALF - 1.2)
+					stall_wood.append({ "c": Vector3(sx, 0.45, sz_p), "s": Vector3(2.4, 0.85, 1.1) })
+					SliceMaterials.add_collision_box(body, Vector3(sx, 0.45, sz_p), Vector3(2.4, 0.85, 1.1))
+					stall_crates.append({ "c": Vector3(sx + 1.65, 0.35, sz_p + side * 0.1), "s": Vector3(0.65, 0.65, 0.65) })
+					stall_poles.append({ "c": Vector3(sx - 1.1, 1.2, sz_p - side * 0.45), "s": Vector3(0.06, 2.35, 0.06) })
+					stall_poles.append({ "c": Vector3(sx + 1.1, 1.2, sz_p - side * 0.45), "s": Vector3(0.06, 2.35, 0.06) })
+					var cmat: StringName = [&"awning_rust", &"cloth_teal", &"cloth_beige"][rng.randi() % 3]
+					if not awnings.has(cmat):
+						awnings[cmat] = []
+					awnings[cmat].append({ "c": Vector3(sx, 2.4, sz_p), "s": Vector3(2.6, 0.07, 1.4), "r": Vector3(side * 0.12, 0.0, 0.0) })
 				# Some protruding signs.
 				if rng.randf() < 0.35:
 					var mat: StringName = [&"sign_green", &"sign_magenta", &"sign_cyan", &"sign_yellow"][rng.randi() % 4]
 					if not signs.has(mat):
 						signs[mat] = []
 					var sy := rng.randf_range(6.0, 9.0)
-					signs[mat].append({ "c": Vector3(x + 1.0, sy, side * (STREET_HALF - 0.9)), "s": Vector3(0.25, 1.6, 1.8) })
+					signs[mat].append({ "c": Vector3(x + 1.0, sy, side * (STREET_HALF - 0.95)), "s": Vector3(0.25, 1.6, 1.7) })
 				x += w
 		k += 1
 	SliceMaterials.add_multimesh(self, shops, &"shopfront")
 	for mat: StringName in signs:
 		SliceMaterials.add_multimesh(self, signs[mat], mat)
+	for amat: StringName in awnings:
+		SliceMaterials.add_multimesh(self, awnings[amat], amat)
+	if not stall_wood.is_empty():
+		SliceMaterials.add_multimesh(self, stall_wood, &"wood")
+	if not stall_crates.is_empty():
+		SliceMaterials.add_multimesh(self, stall_crates, &"container_rust")
+	if not stall_poles.is_empty():
+		SliceMaterials.add_multimesh(self, stall_poles, &"structure")
+
+	# Sparse industrial service kiosks / ration vending units tucked along outer sidewalks.
+	var kiosks: Array = []
+	var kiosk_screens: Array = []
+	var kx := x0 + 95.0
+	var ki := 0
+	while kx < x1 - 80.0:
+		var kside := -1.0 if ki % 2 == 0 else 1.0
+		var kz := kside * (STREET_HALF - 0.55)
+		kiosks.append({ "c": Vector3(kx, 1.15, kz), "s": Vector3(1.1, 2.3, 0.7) })
+		SliceMaterials.add_collision_box(body, Vector3(kx, 1.15, kz), Vector3(1.1, 2.3, 0.7))
+		kiosk_screens.append({ "c": Vector3(kx, 1.45, kz - kside * 0.37), "s": Vector3(0.68, 0.48, 0.03) })
+		kx += 175.0
+		ki += 1
+	if not kiosks.is_empty():
+		SliceMaterials.add_multimesh(self, kiosks, &"container_grey")
+		SliceMaterials.add_multimesh(self, kiosk_screens, &"sign_cyan")
 
 	# Pavement: worn concrete sidewalks along the shop fronts, rails in the middle.
 	for side in [-1.0, 1.0]:
@@ -119,6 +171,18 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 		x += rng.randf_range(22.0, 34.0)
 	for mat: StringName in cloths:
 		SliceMaterials.add_multimesh(self, cloths[mat], mat)
+
+	# East exit threshold gantry leading out toward the industrial corridor.
+	var ex := x1 - 4.0
+	for side in [-1.0, 1.0]:
+		SliceMaterials.add_box(self, body, Vector3(ex, 6.2, side * (STREET_HALF - 0.35)), Vector3(0.7, 12.4, 0.7), &"structure")
+	SliceMaterials.add_box(self, null, Vector3(ex, 12.4, 0.0), Vector3(0.8, 0.9, STREET_HALF * 2.0), &"structure", false)
+	SliceMaterials.add_box(self, null, Vector3(ex, 11.8, 0.0), Vector3(0.9, 0.2, 0.9), &"lamp", false)
+	SliceMaterials.add_coronas(self, [Vector3(ex, 11.6, 0.0)], 2.2, &"corona_soft")
+	var el := SliceMaterials.make_lamp_light(SliceMaterials.WARM, 2.0, 24.0)
+	el.position = Vector3(ex, 11.1, 0.0)
+	add_child(el)
+	SliceMaterials.add_sign(self, Vector3(ex - 0.45, 12.4, 0.0), "SECTOR 77-E  ·  INDUSTRIAL CORRIDOR  →", 0.022, Color(1.0, 0.85, 0.55), -PI * 0.5)
 
 	# Crowd: pedestrians walking the street, a few standing at shop fronts.
 	var walkers: Array = []

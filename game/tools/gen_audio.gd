@@ -17,6 +17,12 @@ func _init() -> void:
 	_save("machinery", _loop(_machinery(16.0), 0.5))
 	_save("foundry_roar", _loop(_roar(12.0), 1.5))
 	_save("market", _loop(_market(24.0), 2.0))
+	_save("cable_tension", _loop(_cable_tension(20.0), 2.0))
+	_save("elec_hum", _loop(_elec_hum(16.0), 1.5))
+	_save("bridge_vib", _loop(_bridge_vib(24.0), 2.5))
+	_save("tram_hum", _loop(_tram_hum(10.0), 1.0))
+	_save("water_fall", _loop(_water_fall(20.0), 2.0))
+	_save("drill_drone", _loop(_drill_drone(22.0), 2.0))
 	_save("lift_motor", _loop(_lift_motor(6.0), 0.5))
 	_save("lift_clunk", _clunk())
 	for i in 3:
@@ -24,6 +30,10 @@ func _init() -> void:
 	_save("impact_far", _impact())
 	_save("horn_far", _horn())
 	_save("creak", _creak())
+	_save("cable_groan", _cable_groan())
+	_save("music_vista", _music_swell([55.0, 82.41, 110.0, 164.81], 28.0))
+	_save("music_arrival", _music_swell([65.41, 98.0, 130.81, 196.0], 28.0))
+	_save("music_crust", _music_swell([41.20, 61.74, 82.41, 123.47], 30.0))
 	for i in 4:
 		_save("step_stone_%d" % i, _step(false))
 		_save("step_metal_%d" % i, _step(true))
@@ -232,6 +242,139 @@ func _lift_motor(s: float) -> PackedFloat32Array:
 	return d
 
 
+## Taut elevator steel cable resonance + deep hollow shaft air column.
+func _cable_tension(s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var swell := _ctrl(s, 0.16)
+	var drift := _ctrl(s, 0.22)
+	var lo := 0.0
+	var hi := 0.0
+	var a1 := _lp(140.0)
+	var a2 := _lp(38.0)
+	var ph1 := 0.0
+	var ph2 := 0.0
+	for i in d.size():
+		var t := float(i) / SR
+		var n := _noise()
+		lo += a1 * (n - lo)
+		hi += a2 * (lo - hi)
+		var f1 := 68.0 + (drift[i] - 0.5) * 3.5
+		var f2 := 206.0 + (swell[i] - 0.5) * 6.0
+		ph1 += TAU * f1 / SR
+		ph2 += TAU * f2 / SR
+		var wire := sin(ph1) * 0.24 + sin(ph1 * 2.02) * 0.14 + sin(ph2) * 0.08 * (0.4 + 0.8 * swell[i])
+		var shaft_air := (lo - hi * 0.4) * (0.8 + 0.5 * swell[i])
+		d[i] = wire + shaft_air * 1.6 + sin(TAU * 34.0 * t) * 0.12
+	return d
+
+
+## Restrained electrical ballast / kiosk hum for markets and terminals.
+func _elec_hum(s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var flutter := _ctrl(s, 0.6)
+	var l := 0.0
+	var a := _lp(1800.0)
+	for i in d.size():
+		var t := float(i) / SR
+		l += a * (_noise() - l)
+		var hum := sin(TAU * 100.0 * t) * 0.35 + sin(TAU * 200.0 * t + 0.4) * 0.20 + sin(TAU * 300.0 * t) * 0.10 + sin(TAU * 500.0 * t) * 0.04
+		var hiss := l * (0.04 + 0.05 * flutter[i])
+		d[i] = hum * (0.88 + 0.14 * flutter[i]) + hiss
+	return d
+
+
+## Deep structural steel deck vibration for exposed inter-stack spans.
+func _bridge_vib(s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var gust := _ctrl(s, 0.14)
+	var shimmer := _ctrl(s, 0.35)
+	var l1 := 0.0
+	var l2 := 0.0
+	var a1 := _lp(95.0)
+	var a2 := _lp(260.0)
+	for i in d.size():
+		var t := float(i) / SR
+		var n := _noise()
+		l1 += a1 * (n - l1)
+		l2 += a2 * (n - l2)
+		var sub := sin(TAU * 28.0 * t) * 0.30 + sin(TAU * 43.2 * t + 0.7) * 0.22 + sin(TAU * 64.5 * t) * 0.12
+		var grate := (l2 - l1) * 0.35 * shimmer[i]
+		d[i] = (sub * (0.55 + 0.65 * gust[i]) + l1 * 2.4 + grate)
+	return d
+
+
+## Heavy electric rail tram traction motor + rhythmic wheel-on-rail joint clatter.
+func _tram_hum(s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var l := 0.0
+	var a := _lp(520.0)
+	var beat := 1.25
+	for i in d.size():
+		var t := float(i) / SR
+		l += a * (_noise() - l)
+		var motor := sin(TAU * 78.0 * t) * 0.30 + sin(TAU * 156.0 * t + 0.5) * 0.16 + sin(TAU * 234.0 * t) * 0.08
+		var tb := fmod(t, beat)
+		var joint := (sin(TAU * 95.0 * tb) * exp(-tb * 28.0) + l * exp(-tb * 35.0) * 1.4)
+		var tb2 := fmod(t + 0.18, beat)
+		var joint2 := (sin(TAU * 88.0 * tb2) * exp(-tb2 * 30.0) + l * exp(-tb2 * 38.0) * 1.1) * 0.7
+		d[i] = motor + l * 0.25 + (joint + joint2) * 0.45
+	return d
+
+
+## Soft rushing waterfall + misty open-atrium air for Ecological Preserve 413-B.
+func _water_fall(s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var swell := _ctrl(s, 0.22)
+	var l1 := 0.0
+	var l2 := 0.0
+	var a1 := _lp(2600.0)
+	var a2 := _lp(320.0)
+	for i in d.size():
+		var n := _noise()
+		l1 += a1 * (n - l1)
+		l2 += a2 * (n - l2)
+		d[i] = (l1 * 0.65 + l2 * 1.45) * (0.78 + 0.34 * swell[i])
+	return d
+
+
+## Colossal planetary core-drill & crusher vibration for Asset 31's excavated crust (0 m).
+func _drill_drone(s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var pulse := _ctrl(s, 0.18)
+	var b := 0.0
+	var l := 0.0
+	var a := _lp(110.0)
+	for i in d.size():
+		var t := float(i) / SR
+		b = b * 0.996 + _noise() * 0.03
+		l += a * (b - l)
+		var rot := 0.7 + 0.3 * sin(TAU * 1.35 * t)
+		var sub := sin(TAU * 24.0 * t) * 0.42 + sin(TAU * 36.2 * t + 0.6) * 0.28 + sin(TAU * 72.5 * t) * 0.12
+		d[i] = (sub * rot + l * 5.2) * (0.75 + 0.4 * pulse[i])
+	return d
+
+
+## Sparse dark-ambient harmonic swell (Brief §6.3): hollow bowed-metal fifths
+## that rise slowly out of silence and dissolve back into the Mantle ambience.
+func _music_swell(freqs: Array, s: float) -> PackedFloat32Array:
+	var d := _buf(s)
+	var drift := _ctrl(s, 0.12)
+	var lp_s := 0.0
+	var a := _lp(420.0)
+	for i in d.size():
+		var t := float(i) / SR
+		var env := smoothstep(0.0, 9.0, t) * (1.0 - smoothstep(17.5, s, t))
+		var v := 0.0
+		for k in freqs.size():
+			var f := float(freqs[k])
+			var det := 1.0 + 0.0025 * sin(TAU * (0.09 + 0.03 * float(k)) * t)
+			var w := 1.0 / (1.0 + float(k) * 0.65)
+			v += (sin(TAU * f * det * t) + 0.32 * sin(TAU * f * 2.0 * det * t + 0.8)) * w
+		lp_s += a * (v - lp_s)
+		d[i] = lp_s * env * (0.75 + 0.35 * drift[i])
+	return d
+
+
 # ---------------------------------------------------------------- one-shots
 
 func _clunk() -> PackedFloat32Array:
@@ -301,6 +444,22 @@ func _creak() -> PackedFloat32Array:
 		h += _lp(fc * 0.6) * (l - h)
 		var e := smoothstep(0.0, 0.2, t) * (1.0 - smoothstep(1.6, 2.2, t))
 		d[i] = (l - h) * pulse * e
+	return d
+
+
+## Heavy steel cable tension groan for deep shafts and suspension spans.
+func _cable_groan() -> PackedFloat32Array:
+	var d := _buf(3.4)
+	var l := 0.0
+	var ph := 0.0
+	for i in d.size():
+		var t := float(i) / SR
+		var f := 135.0 - 42.0 * smoothstep(0.2, 3.0, t) + 6.0 * sin(TAU * 2.4 * t)
+		ph += TAU * f / SR
+		var e := smoothstep(0.0, 0.35, t) * (1.0 - smoothstep(2.1, 3.4, t))
+		var tone := sin(ph) * 0.45 + sin(ph * 1.98) * 0.28 + sin(ph * 3.12) * 0.14
+		l += _lp(700.0) * (_noise() - l)
+		d[i] = (tone + l * 0.35) * e
 	return d
 
 

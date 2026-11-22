@@ -10,9 +10,14 @@ const SPEED := 1.6
 const BOARD_TIME := 1.0
 
 var top_height := 42.0
+var start_at_top := false
+var lift_speed := SPEED
+var show_altitude := false
+var base_logical_y := 41000.0
 var platform: AnimatableBody3D
 var _gate_shape: CollisionShape3D
 var _gate_mesh: MeshInstance3D
+var _alt_label: Label3D
 var _target := 0.0
 var _moving := false
 var _on_timer := 0.0
@@ -24,7 +29,7 @@ var _clunk: AudioStreamPlayer3D
 func _ready() -> void:
 	_build_shaft()
 	platform = AnimatableBody3D.new()
-	platform.sync_to_physics = true
+	platform.sync_to_physics = false
 	platform.set_meta(&"surface", "metal")
 	add_child(platform)
 	SliceMaterials.add_box(platform, platform, Vector3(0, -0.08, 0), Vector3(3.0, 0.2, 3.0), &"bridge_deck")
@@ -43,9 +48,19 @@ func _ready() -> void:
 	l.position = Vector3(1.2, 2.1, -1.2)
 	platform.add_child(l)
 	SliceMaterials.add_box(platform, null, Vector3(1.45, 1.7, -1.45), Vector3(0.06, 1.2, 0.06), &"structure", false)
+	if show_altitude:
+		SliceMaterials.add_box(platform, null, Vector3(0.0, 1.48, -1.42), Vector3(1.45, 0.44, 0.06), &"structure", false)
+		_alt_label = SliceMaterials.add_sign(platform, Vector3(0.0, 1.48, -1.37),
+			"EL-CYL-77  ·  41,000 M", 0.0046, Color(1.0, 0.84, 0.52), 0.0)
 	_motor = _audio("res://audio/lift_motor.wav", true)
+	if top_height > 100.0:
+		_motor.pitch_scale = 0.78
 	_clunk = _audio("res://audio/lift_clunk.wav", false)
+	if start_at_top:
+		platform.position.y = top_height
+		_target = top_height
 	_set_gate(false)
+	_update_altitude_display()
 
 
 func _audio(path: String, loop: bool) -> AudioStreamPlayer3D:
@@ -95,14 +110,20 @@ func _physics_process(delta: float) -> void:
 	var at_top := platform.position.y > top_height - 0.01
 	var at_bottom := platform.position.y < 0.01
 	if _moving:
-		var y := move_toward(platform.position.y, _target, SPEED * delta)
+		var prev_y := platform.position.y
+		var y := move_toward(prev_y, _target, lift_speed * delta)
+		var dy := y - prev_y
 		platform.position.y = y
+		if on and absf(dy) > 0.0:
+			player.global_position.y += dy
+		_update_altitude_display()
 		if is_equal_approx(y, _target):
 			_moving = false
 			_motor.stop()
 			_clunk.play()
 			_needs_exit = true
-			_set_gate(_target > 0.0) # west side stays closed at the roof
+			_set_gate(_target > 0.0 and not start_at_top) # roof lift keeps west side closed at top
+			_update_altitude_display()
 		return
 	if on and not _needs_exit:
 		_on_timer += delta
@@ -127,3 +148,19 @@ func _start(target: float) -> void:
 	_set_gate(true)
 	_clunk.play()
 	_motor.play()
+	_update_altitude_display()
+
+
+func _update_altitude_display() -> void:
+	if _alt_label == null:
+		return
+	var alt := int(roundf(base_logical_y + platform.position.y))
+	var km_to_crust := float(alt) / 1000.0
+	var status := "HOLD"
+	if _moving:
+		status = "DESCENDING" if _target < platform.position.y else "ASCENDING"
+	elif platform.position.y > top_height - 0.1:
+		status = "FLOOR 77 HUB"
+	elif platform.position.y < 0.1:
+		status = "UNDERCROFT 76-B"
+	_alt_label.text = "EL-CYL-77  ·  %d M\n%s  ·  CRUST -%.2f KM" % [alt, status, km_to_crust]

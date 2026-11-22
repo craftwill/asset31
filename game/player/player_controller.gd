@@ -4,6 +4,7 @@ extends CharacterBody3D
 ## WorldOrigin moves it back toward 0,0,0 when it rebases.
 
 signal fatal_fall(height: float)
+signal hard_landing(height: float)
 signal footstep(surface: String)
 
 @export var walk_speed := 1.8
@@ -22,6 +23,7 @@ signal footstep(surface: String)
 
 var head: Node3D
 var camera: Camera3D
+var work_lamp: SpotLight3D
 
 ## Dev/test only: when set, drives the player in this render-space direction.
 var autopilot_dir := Vector3.ZERO
@@ -56,11 +58,22 @@ func _ready() -> void:
 	head.name = "Head"
 	add_child(head)
 	camera = Camera3D.new()
-	camera.near = 0.05
-	camera.far = 40000.0
+	camera.near = 0.12
+	camera.far = 30000.0
 	camera.fov = 74.0
 	head.add_child(camera)
 	camera.current = true
+	# Restrained handheld tungsten work-lamp (off by default, toggle with F).
+	work_lamp = SpotLight3D.new()
+	work_lamp.position = Vector3(0.18, -0.14, -0.15)
+	work_lamp.light_color = Color(1.0, 0.78, 0.52)
+	work_lamp.light_energy = 1.6
+	work_lamp.spot_range = 20.0
+	work_lamp.spot_angle = 26.0
+	work_lamp.spot_attenuation = 1.15
+	work_lamp.shadow_enabled = false
+	work_lamp.visible = false
+	head.add_child(work_lamp)
 	_eye_height = stand_height - eye_below_top
 	head.position.y = _eye_height
 	floor_max_angle = deg_to_rad(46.0)
@@ -166,6 +179,8 @@ func _track_falls(delta: float) -> void:
 			var fall := _air_top_y - position.y
 			if fall > fatal_fall_height:
 				fatal_fall.emit(fall)
+			elif fall > 5.0:
+				hard_landing.emit(fall)
 		_air_top_y = position.y
 		_safe_timer -= delta
 		if _safe_timer <= 0.0:

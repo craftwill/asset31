@@ -125,18 +125,36 @@ static func generate_chunk(def: Dictionary, key: Vector2i) -> Array:
 		for bj in n:
 			var bx := org.x + bi * BLOCK + STREET * 0.5
 			var bz := org.y + bj * BLOCK + STREET * 0.5
+			var block_rect := Rect2(bx, bz, bsz, bsz)
 			var zone := zone_at(def, Vector2(bx + bsz * 0.5, bz + bsz * 0.5))
+			var r_blk := rng.randf()
+			var r_sub := rng.randf()
 			if zone == Zone.INDUSTRIAL:
-				_try_building(out, rng, Rect2(bx, bz, bsz, bsz), zone, ctx)
+				_try_building(out, rng, block_rect, zone, ctx)
+			elif zone == Zone.URBAN and r_blk < 0.08:
+				# Full-block civic/megastructure podium + stepped tower silhouette.
+				_try_building(out, rng, block_rect, zone, ctx, 1.35)
+			elif zone == Zone.URBAN and r_blk < 0.26:
+				# Merged wide slabs along X or Z to break up the uniform 2x2 grid.
+				var half := bsz * 0.5
+				if r_sub < 0.5:
+					_try_building(out, rng, Rect2(bx, bz, bsz, half), zone, ctx)
+					_try_building(out, rng, Rect2(bx, bz + half, bsz, half), zone, ctx)
+				else:
+					_try_building(out, rng, Rect2(bx, bz, half, bsz), zone, ctx)
+					_try_building(out, rng, Rect2(bx + half, bz, half, bsz), zone, ctx)
 			else:
 				var half := bsz * 0.5
+				var courtyard_block := zone == Zone.URBAN and r_blk < 0.36
 				for li in 2:
 					for lj in 2:
-						_try_building(out, rng, Rect2(bx + li * half, bz + lj * half, half, half), zone, ctx)
+						# Open courtyard / sightline gap in ~10% of urban blocks.
+						var skip := courtyard_block and ((li + lj) % 2 == (0 if r_sub < 0.5 else 1))
+						_try_building(out, rng, Rect2(bx + li * half, bz + lj * half, half, half), zone, ctx, 1.0, skip)
 	return out
 
 
-static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zone: Zone, ctx: Dictionary) -> void:
+static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zone: Zone, ctx: Dictionary, height_bias := 1.0, skip := false) -> void:
 	# Always draw the same number of randoms so exclusions never reshuffle neighbours.
 	var r_in := PackedFloat32Array([rng.randf(), rng.randf(), rng.randf(), rng.randf()])
 	var r_h := rng.randf()
@@ -148,9 +166,13 @@ static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zo
 	var r_set_in := rng.randf()
 	var r_roof := rng.randf()
 	var r_roof_p := Vector3(rng.randf(), rng.randf(), rng.randf())
-	if _excluded(lot, ctx):
+	var r_gap := rng.randf()
+	if skip or _excluded(lot, ctx):
 		return
-	var inset_max := 4.0 if zone == Zone.INDUSTRIAL else 2.5
+	# Occasional lone open pocket inside dense urban areas for silhouette breathing room.
+	if zone == Zone.URBAN and height_bias <= 1.0 and r_gap < 0.06:
+		return
+	var inset_max := 4.0 if zone == Zone.INDUSTRIAL else 2.8
 	var il := 1.0 + r_in[0] * inset_max
 	var ir := 1.0 + r_in[1] * inset_max
 	var it := 1.0 + r_in[2] * inset_max
@@ -164,10 +186,10 @@ static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zo
 		Zone.INDUSTRIAL:
 			h = 12.0 + r_h * 30.0
 		_:
-			if r_mega < 0.012:
-				h = 300.0 + r_mh * (float(ctx.ceiling) - 360.0)
+			if r_mega < 0.015:
+				h = 280.0 + r_mh * (float(ctx.ceiling) - 340.0)
 			else:
-				h = 14.0 + pow(r_h, 2.4) * 150.0
+				h = (14.0 + pow(r_h, 2.2) * 165.0) * height_bias
 	h = minf(ceilf(h / STOREY) * STOREY, float(ctx.ceiling) - 40.0)
 	# The seed carries the zone in its integer part (read by the facade shader).
 	var seed := float(zone) + r_seed * 0.9
@@ -178,10 +200,27 @@ static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zo
 	var top_fz := fz
 	var top_cx := cx
 	var top_cz := cz
-	if zone != Zone.INDUSTRIAL and h > 30.0 and r_set < 0.45:
-		# Stepped silhouette: a lower body and a narrower upper body.
-		var h1 := ceilf(h * (0.45 + 0.3 * r_set_h) / STOREY) * STOREY
-		var k := 0.15 + 0.15 * r_set_in
+	if zone != Zone.INDUSTRIAL and h > 75.0 and r_set < 0.72:
+		# Three-tier stepped megastructure tower (podium -> shaft -> upper crown).
+		var h1 := ceilf(h * (0.22 + 0.14 * r_set_h) / STOREY) * STOREY
+		var h2 := ceilf(h * (0.58 + 0.16 * r_set_in) / STOREY) * STOREY
+		var k1 := 0.14 + 0.10 * r_set_in
+		var k2 := 0.14 + 0.12 * r_roof_p.y
+		_box(out, cx, -1.0, cz, fx, h1 + 1.0, fz, seed)
+		var m_fx := fx * (1.0 - 2.0 * k1)
+		var m_fz := fz * (1.0 - 2.0 * k1)
+		var m_cx := cx + (r_roof_p.x - 0.5) * fx * k1 * 0.8
+		var m_cz := cz + (r_roof_p.z - 0.5) * fz * k1 * 0.8
+		_box(out, m_cx, h1 - 0.5, m_cz, m_fx, h2 - h1 + 0.5, m_fz, seed)
+		top_fx = maxf(6.0, m_fx * (1.0 - 2.0 * k2))
+		top_fz = maxf(6.0, m_fz * (1.0 - 2.0 * k2))
+		top_cx = m_cx + (r_roof_p.z - 0.5) * m_fx * k2 * 0.7
+		top_cz = m_cz + (r_roof_p.x - 0.5) * m_fz * k2 * 0.7
+		_box(out, top_cx, h2 - 0.5, top_cz, top_fx, h - h2 + 0.5, top_fz, seed)
+	elif zone != Zone.INDUSTRIAL and h > 28.0 and r_set < 0.52:
+		# Two-tier stepped silhouette: a lower body and a narrower upper body.
+		var h1 := ceilf(h * (0.42 + 0.32 * r_set_h) / STOREY) * STOREY
+		var k := 0.15 + 0.16 * r_set_in
 		_box(out, cx, -1.0, cz, fx, h1 + 1.0, fz, seed)
 		top_fx = fx * (1.0 - 2.0 * k)
 		top_fz = fz * (1.0 - 2.0 * k)
@@ -192,13 +231,13 @@ static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zo
 	else:
 		# Buildings sink 1 m into the floor slab so no faces are coplanar with the ground.
 		_box(out, cx, -1.0, cz, fx, h + 1.0, fz, seed)
-	if r_roof < 0.6 and top_fx > 6.0 and top_fz > 6.0:
-		# Rooftop clutter: plant room / tank / hut.
-		var rw := 2.0 + r_roof_p.y * 3.0
-		var rd := 2.0 + r_roof_p.x * 3.0
-		var rh := 2.0 + r_roof * 4.0
-		var rx := top_cx + (r_roof_p.x - 0.5) * (top_fx - rw - 1.0)
-		var rz := top_cz + (r_roof_p.z - 0.5) * (top_fz - rd - 1.0)
+	if r_roof < 0.65 and top_fx > 6.0 and top_fz > 6.0:
+		# Rooftop clutter: plant room / tank / penthouse slab.
+		var rw := 2.4 + r_roof_p.y * minf(top_fx * 0.45, 5.5)
+		var rd := 2.4 + r_roof_p.x * minf(top_fz * 0.45, 5.5)
+		var rh := 2.2 + r_roof * 5.0
+		var rx := top_cx + (r_roof_p.x - 0.5) * maxf(top_fx - rw - 1.0, 0.0)
+		var rz := top_cz + (r_roof_p.z - 0.5) * maxf(top_fz - rd - 1.0, 0.0)
 		_box(out, rx, top - 0.5, rz, rw, rh + 0.5, rd, seed)
 
 

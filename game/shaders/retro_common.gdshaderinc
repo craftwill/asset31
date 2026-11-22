@@ -19,6 +19,41 @@ vec4 retro_snap(vec4 clip) {
 	return clip;
 }
 
+// Comfort-tuned vertex snapping: giant megastructure quads (walls, slabs,
+// long rails/girders) are never snapped so planes do not swim, and in subtle
+// mode snapping fades out in the distance so tiny city silhouettes stay steady.
+vec4 retro_snap_stable(vec4 clip, vec3 obj_scale) {
+	if (retro_snap_strength <= 0.0 || clip.w <= 0.0001) {
+		return clip;
+	}
+	float max_dim = max(obj_scale.x, max(obj_scale.y, obj_scale.z));
+	if (max_dim > 80.0) {
+		return clip;
+	}
+	float dist_k = (retro_snap_resolution.x > 500.0) ? (1.0 - smoothstep(80.0, 220.0, clip.w)) : 1.0;
+	float s = retro_snap_strength * dist_k;
+	if (s <= 0.001) {
+		return clip;
+	}
+	vec2 grid = retro_snap_resolution * 0.5;
+	vec2 ndc = clip.xy / clip.w;
+	vec2 snapped = round(ndc * grid) / grid;
+	clip.xy = mix(ndc, snapped, s) * clip.w;
+	return clip;
+}
+
+const float RETRO_BAYER[16] = float[16](
+	0.0, 8.0, 2.0, 10.0,
+	12.0, 4.0, 14.0, 6.0,
+	3.0, 11.0, 1.0, 9.0,
+	15.0, 7.0, 13.0, 5.0);
+
+// 4x4 ordered Bayer threshold in (0, 1) for retro dithered LOD fades.
+float retro_bayer(vec2 fragcoord) {
+	ivec2 p = ivec2(fragcoord) % 4;
+	return (RETRO_BAYER[p.y * 4 + p.x] + 0.5) / 16.0;
+}
+
 float hash12(vec2 p) {
 	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
 	p3 += dot(p3, p3.yzx + 33.33);

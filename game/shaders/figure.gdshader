@@ -30,6 +30,25 @@ vec3 palette(float part, float seed) {
 }
 
 void vertex() {
+	float seed = floor(INSTANCE_CUSTOM.x * 512.0 + 0.5);
+	float opt = COLOR.b;
+	// Optional clothing silhouettes per figure (brimmed hats, long coats, packs).
+	if (opt > 0.15) {
+		bool keep = false;
+		if (opt < 0.5) {
+			// Wide hat brim / hard-hat rim (more common on dark foundry workers).
+			keep = hash12(vec2(seed, 5.0)) < (INSTANCE_CUSTOM.z > 0.3 ? 0.78 : 0.45);
+		} else if (opt < 0.85) {
+			// Long industrial coat / cloak skirt (iconic 025s silhouette).
+			keep = hash12(vec2(seed, 6.0)) < (INSTANCE_CUSTOM.z > 0.3 ? 0.72 : 0.36);
+		} else {
+			// Backpack / satchel.
+			keep = hash12(vec2(seed, 7.0)) < 0.32;
+		}
+		if (!keep) {
+			VERTEX = vec3(0.0);
+		}
+	}
 	float limb = COLOR.g;
 	float speed = INSTANCE_CUSTOM.y;
 	if (limb > 0.1 && speed > 0.0) {
@@ -45,8 +64,8 @@ void vertex() {
 		v = vec3(v.x, v.y * cy - v.z * sy, v.y * sy + v.z * cy);
 		VERTEX = v + vec3(0.0, pivot_y, 0.0);
 	}
-	v_col = palette(COLOR.r, floor(INSTANCE_CUSTOM.x * 512.0 + 0.5)) * (1.0 - INSTANCE_CUSTOM.z);
-	POSITION = retro_snap(PROJECTION_MATRIX * (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)));
+	v_col = palette(COLOR.r, seed) * (1.0 - INSTANCE_CUSTOM.z);
+	POSITION = retro_snap_stable(PROJECTION_MATRIX * (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)), vec3(1.0));
 }
 
 void fragment() {

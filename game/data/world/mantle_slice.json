@@ -52,10 +52,14 @@
       ],
       "districts": [],
       "sites": [
-        { "id": "SITE-GATE-W", "kind": "gate_arrival", "rect": [-3000, -290, -2740, 290] }
+        { "id": "SITE-GATE-W", "kind": "gate_arrival", "rect": [-3000, -290, -2740, 290] },
+        { "id": "SITE-HYDRO-413", "kind": "hydroponics", "rect": [-2905, -220, -2750, -100], "no_lamps": true },
+        { "id": "SITE-PRESERVE-413", "kind": "preserve", "rect": [-2930, -440, -2725, -220], "no_lamps": true }
       ],
       "landmarks": [
-        { "id": "LM-0413-GATE", "name": "West arrival gate", "position": [-3000, 0, 0] }
+        { "id": "LM-0413-GATE", "name": "West arrival gate", "position": [-3000, 0, 0] },
+        { "id": "LM-0413-HYDRO", "name": "Hydroponic Bay 413-A", "position": [-2827, 0, -100] },
+        { "id": "LM-0413-PRESERVE", "name": "Ecological Preserve 413-B", "position": [-2827, 0, -330] }
       ]
     }
   ],
@@ -77,6 +81,9 @@
     }
   ],
   "structures": [
+    { "id": "EL-CYL-77", "kind": "mining_shaft", "position": [3260, 41000, -180], "radius": 150, "depth": 2200, "height": 1400, "entry_dist": 220 },
+    { "id": "CRUST-00", "kind": "mining_surface", "position": [3260, 0, -180] },
+    { "id": "EL-DEEP-00", "kind": "deep_relay", "position": [3271.5, 0, -179.0] },
     { "id": "EL-GAP-1", "kind": "elevator_shaft", "position": [4050, 41000, 720], "size": 30, "depth": 6000, "height": 4000, "cars": 3 },
     { "id": "EL-GAP-2", "kind": "elevator_shaft", "position": [5250, 41000, -1150], "size": 30, "depth": 6000, "height": 4000, "cars": 2 }
   ],
@@ -87,21 +94,29 @@
     { "profile": "residential", "box": [-1950, 40990, -450, -1050, 41200, 450] },
     { "profile": "foundry", "box": [1700, 40990, -60, 2100, 41064, 60] },
     { "profile": "industrial", "box": [1100, 40990, -700, 2740, 41300, 700] },
+    { "profile": "crust", "box": [2400, -100, -900, 4100, 450, 700] },
+    { "profile": "shaft", "box": [3100, 450, -340, 3420, 41100, -20] },
     { "profile": "edge", "box": [2740, 40990, -400, 3040, 41450, 400] },
     { "profile": "gap", "box": [3040, 39000, -3000, 6040, 43000, 3000] },
+    { "profile": "preserve", "box": [6150, 40995, -440, 6355, 41230, -220] },
+    { "profile": "hydroponics", "box": [6175, 40995, -220, 6330, 41020, -100] },
     { "profile": "arrival", "box": [6040, 40990, -400, 6400, 41450, 400] }
   ],
   "ambience_profiles": {
-    "city": { "layers": { "rumble": -10, "vent": -22 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.5 } },
-    "residential": { "layers": { "rumble": -12, "vent": -21 }, "reverb": { "room": 0.85, "wet": 0.3, "damping": 0.55 } },
-    "room": { "layers": { "rumble": -17, "room_tone": -13, "vent": -32 }, "reverb": { "room": 0.12, "wet": 0.12, "damping": 0.85 } },
-    "roof": { "layers": { "rumble": -9, "wind": -21, "vent": -27 }, "reverb": { "room": 0.95, "wet": 0.25, "damping": 0.5 } },
-    "market": { "layers": { "rumble": -13, "market": -10, "vent": -25 }, "reverb": { "room": 0.7, "wet": 0.3, "damping": 0.6 } },
-    "industrial": { "layers": { "rumble": -8, "machinery": -19, "vent": -19 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.45 } },
-    "foundry": { "layers": { "rumble": -8, "machinery": -13, "vent": -25 }, "reverb": { "room": 0.95, "wet": 0.5, "damping": 0.35 } },
-    "edge": { "layers": { "rumble": -7, "wind": -13, "machinery": -31 }, "reverb": { "room": 0.95, "wet": 0.4, "damping": 0.4 } },
-    "gap": { "layers": { "rumble": -6, "wind": -9 }, "reverb": { "room": 1.0, "wet": 0.45, "damping": 0.3 } },
-    "arrival": { "layers": { "rumble": -9, "wind": -19, "vent": -21 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.5 } }
+    "city": { "layers": { "rumble": -11, "vent": -22 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.5 }, "oneshot_interval": 1.3 },
+    "residential": { "layers": { "rumble": -13, "vent": -21, "market": -34 }, "reverb": { "room": 0.85, "wet": 0.3, "damping": 0.55 }, "oneshot_interval": 1.8, "oneshot_db": -4.0 },
+    "room": { "layers": { "rumble": -18, "room_tone": -14, "vent": -32 }, "reverb": { "room": 0.12, "wet": 0.12, "damping": 0.85 }, "oneshot_interval": 2.4, "oneshot_db": -7.0 },
+    "roof": { "layers": { "rumble": -10, "wind": -21, "vent": -27 }, "reverb": { "room": 0.95, "wet": 0.25, "damping": 0.5 }, "oneshot_interval": 1.4 },
+    "market": { "layers": { "rumble": -14, "market": -11, "elec_hum": -23, "vent": -26 }, "reverb": { "room": 0.7, "wet": 0.3, "damping": 0.6 }, "oneshot_interval": 1.7, "oneshot_db": -5.0 },
+    "industrial": { "layers": { "rumble": -8, "machinery": -19, "vent": -19, "elec_hum": -28 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.45 }, "oneshot_interval": 1.0 },
+    "foundry": { "layers": { "rumble": -8, "machinery": -13, "vent": -25 }, "reverb": { "room": 0.95, "wet": 0.5, "damping": 0.35 }, "oneshot_interval": 0.9 },
+    "shaft": { "layers": { "rumble": -6, "cable_tension": -13, "machinery": -20, "wind": -16 }, "reverb": { "room": 1.0, "wet": 0.62, "damping": 0.2 }, "oneshot_interval": 0.95 },
+    "crust": { "layers": { "rumble": -4, "drill_drone": -9, "machinery": -14, "cable_tension": -18 }, "reverb": { "room": 1.0, "wet": 0.68, "damping": 0.18 }, "pitch": 0.94, "oneshot_interval": 0.85 },
+    "edge": { "layers": { "rumble": -8, "wind": -13, "bridge_vib": -19, "machinery": -31 }, "reverb": { "room": 0.95, "wet": 0.4, "damping": 0.4 }, "oneshot_interval": 1.1 },
+    "gap": { "layers": { "rumble": -7, "wind": -9, "bridge_vib": -15 }, "reverb": { "room": 1.0, "wet": 0.45, "damping": 0.3 }, "oneshot_interval": 1.15 },
+    "hydroponics": { "layers": { "rumble": -14, "elec_hum": -18, "vent": -19, "market": -22 }, "reverb": { "room": 0.82, "wet": 0.36, "damping": 0.5 }, "pitch": 1.04, "oneshot_interval": 2.0, "oneshot_db": -6.0 },
+    "preserve": { "layers": { "water_fall": -12, "vent": -24, "rumble": -26 }, "reverb": { "room": 0.96, "wet": 0.44, "damping": 0.38 }, "pitch": 1.02, "oneshot_interval": 3.0, "oneshot_db": -10.0 },
+    "arrival": { "layers": { "rumble": -10, "wind": -19, "vent": -20, "elec_hum": -25, "cable_tension": -29 }, "reverb": { "room": 0.88, "wet": 0.36, "damping": 0.44 }, "pitch": 1.06, "oneshot_interval": 1.4 }
   },
   "player_start": { "position": [-1490.3, 41000.05, 112.7], "yaw_deg": 180 },
   "route": [[-1491.0, 112.9], [-1494.5, 112.9], [-1500.0, 112.9], [-1500.0, 0.0], [6200.0, 0.0]],

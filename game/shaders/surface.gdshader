@@ -16,10 +16,14 @@ uniform float grime = 0.0;
 uniform float roughness_val = 0.85;
 uniform float specular_val = 0.25;
 uniform float stretch = 0.0; // 1 = fit the texture once across each face (posters, signs)
+uniform float no_snap = 0.0;
+uniform float fade_start = 0.0;
+uniform float fade_end = 0.0;
 
 varying vec3 v_pos;
 varying vec3 v_nrm;
 varying vec3 v_size;
+varying float v_dist;
 
 void vertex() {
 	vec3 sc = retro_object_scale(MODEL_MATRIX, INSTANCE_CUSTOM);
@@ -31,10 +35,19 @@ void vertex() {
 		v_pos = VERTEX * sc;
 		v_nrm = NORMAL;
 	}
-	POSITION = retro_snap(PROJECTION_MATRIX * (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)));
+	vec4 mv = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	v_dist = -mv.z;
+	vec4 clip = PROJECTION_MATRIX * mv;
+	POSITION = (no_snap > 0.5) ? clip : retro_snap_stable(clip, sc);
 }
 
 void fragment() {
+	if (fade_end > 0.0 && v_dist > fade_start) {
+		float ft = clamp((v_dist - fade_start) / max(fade_end - fade_start, 1.0), 0.0, 1.0);
+		if (ft >= retro_bayer(FRAGCOORD.xy)) {
+			discard;
+		}
+	}
 	vec2 uv = retro_box_uv(v_pos, v_nrm);
 	vec2 tuv;
 	if (stretch > 0.5) {

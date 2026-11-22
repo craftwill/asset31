@@ -41,32 +41,46 @@ and the arrival point.
 - `StackRuntime` builds a stack: the shell (walls with the edge gate, ceiling, pillars) plus the city.
 - `CityLayout` is a deterministic generator (seeded by stack id + chunk) that feeds **both** visuals and
   collision, so every LOD shows the same building in the same place.
-- Visual LOD: buildings under 40 m fade out at 2.6 km; larger silhouettes never disappear.
+- Visual LOD: buildings under 40 m smoothly fade emission and 4×4 Bayer dither-fade out over 3.2–4.0 km before culling at 4.2 km; larger silhouettes never disappear.
+- Procedural window interiors: near/mid facades run single-pass ray-box interior mapping (`shaders/window_interior.gdshaderinc`) and cross-fade seamlessly into analytical far window lights (`shaders/facade.gdshader`).
 - Streaming: building collision and practical lights load within 380 m of the player and unload beyond
   560 m. Shell and bridge collision are always present (a few shapes).
-- `ConnectionRuntime` builds physical routes (only `bridge` so far), anchored at the route's midpoint.
+- `ConnectionRuntime` builds physical routes (`bridge` with 500 m portal gantries, 46 m cable-stay pylon towers at 1.0 / 2.0 km, warm→cool lamp transition approaching `STK-0413`, and a 1.5 km mid-span shelter), anchored at the route's midpoint.
 
 ## Files
 ```
 project.godot              settings, shader globals
-main.gd / scenes/main.tscn entry point: build world, player, overlays, save/load, test hooks
+main.gd / scenes/main.tscn entry point: build world, player, gameplay, save/load, test hooks
+scenes/window_interior_test.tscn  standalone procedural window interior showcase
 core/world_origin.gd       floating origin (autoload)
 core/world_anchor.gd       node pinned to a logical position
 core/input_setup.gd        key bindings
 player/player_controller.gd
-world/city_layout.gd       deterministic floor layout
+gameplay/item_db.gd        item catalog loader + procedural pixel icon generator
+gameplay/inventory_grid.gd Tarkov-style 2D grid inventory model (rotate, stack, transfer)
+gameplay/loot_container.gd persistent interactable world containers
+gameplay/readable_note.gd  interactable in-world notes and canon plaques
+gameplay/interaction_system.gd  first-person raycast interaction (containers + notes)
+gameplay/survival_component.gd  health, slow hunger/thirst drain, shelter/heat/exposure zones
+ui/hud_overlay.gd          minimal dark-industrial reticle, prompt, note reader, survival bars, toast
+ui/inventory_ui.gd         drag-and-drop grid inventory panel
+ui/map_ui.gd               diegetic Floor 77 route diagram (no GPS/objective markers)
+world/city_layout.gd       deterministic floor layout (slabs, courtyards, 3-tier silhouettes)
 world/stack_runtime.gd     stack builder + streaming
 world/connection_runtime.gd
+world/mining_shaft.gd      reachable 175s cylindrical mining shaft + 3 vertical strata + rideable 220 m lift to Undercroft 76-B
 world/slice_materials.gd   shared material family + instancing helpers
 world/texture_factory.gd   generated pixel textures
-world/sites/               authored places: home (+lift), market, foundry (+pipes), gate plazas
+world/sites/               authored places: home (+lift), market, foundry (+bypass/pipes), gate plazas
 world/crowd.gd             low-poly people (instanced, vertex-animated)
 world/elevator_shaft.gd    shafts in the gaps between stacks
 world/atmosphere.gd        environment, ground mist, dust motes
 audio/ambience_manager.gd  zone beds, reverb, distant one-shots, footsteps
 tools/gen_audio.gd         offline sound synthesis
-shaders/                   facade, ground, emissive, retro post, common include
+tools/window_interior_test.gd
+shaders/                   facade, window_interior, window_plane, ground, emissive, surface, retro post
 data/world/mantle_slice.json
+data/items/items.json
 ```
 
 ## Adding a stack or floor
@@ -77,16 +91,19 @@ data/world/mantle_slice.json
 
 ## Tests and measurements
 ```
-# Traversal proof: walks spawn -> gate -> bridge -> neighbour stack, headless (~1 min real time)
-godot --headless --path game --fixed-fps 60 -- --autopilot=20
-# Renders the 7 preset viewpoints to PNG and prints frame times
+# Traversal proof: walks spawn -> gate -> bridge -> neighbour stack, headless
+godot --headless --path game --fixed-fps 60 -- --autopilot=12
+# Gameplay & persistence self-test (containers, grid inventory, consumables, env zones, save/load)
+godot --headless --path game -- --selftest
+# Renders preset viewpoints + UI shot to PNG and prints frame times
 godot --path game -- --shots=C:/some/dir   [--no-post] [--snap=0|1|2]
+# Captures consecutive motion frames (market, roof vista, bridge)
+godot --path game -- --motion=C:/some/dir
 ```
-Last results (RTX 3060, 960×540 internal, vsync off):
-- Autopilot: ARRIVED in STK-0413 after 385 s simulated, 4 origin rebases, 0.000 m altitude drift.
-- World build: ~0.4 s for 67 552 buildings across 2 stacks.
-- Frame time: 1.25–1.70 ms, 29–285 draw calls, up to 396k primitives.
+Last results (RTX 3050 Laptop, 960×540 internal, vsync off, muted):
+- World build: ~1.1 s for 117 774 buildings across 2 stacks.
+- Frame time: 1.32–3.27 ms (305–760 fps), 31–598 draw calls, up to 987k primitives.
+- Selftest: PASS (7 containers, 5 readable notes, grid rotation/stacking/transfer, consumables, env zones, save/load round-trip).
 
 ## Phase status
-Phase 1 (scale and world proof): **done.** Phase 2 (hero vista, final ambience): **done**, see PHASE2_NOTES.md.
-Next is Phase 3 (traversal polish: route decisions, shelters) and Phase 4 (looting, grid inventory, survival).
+Phases 1–5 are **complete** for the vertical slice. See `PHASE2_NOTES.md` and `PHASE3_4_NOTES.md` for details.

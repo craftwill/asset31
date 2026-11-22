@@ -1,0 +1,92 @@
+{
+  "items": [
+    {
+      "id": "ration_tin",
+      "name": "Ration Tin",
+      "category": "food",
+      "size": [1, 1],
+      "max_stack": 3,
+      "hunger": 32,
+      "thirst": 0,
+      "health": 0,
+      "description": "Stamped floor-issue protein paste. Heavy, dry, keeps for decades."
+    },
+    {
+      "id": "dried_strip",
+      "name": "Salted Rations",
+      "category": "food",
+      "size": [2, 1],
+      "max_stack": 2,
+      "hunger": 54,
+      "thirst": -6,
+      "health": 0,
+      "description": "Wrapped nutrient strips for long inter-stack crossings. Leaves you thirsty."
+    },
+    {
+      "id": "condensate_can",
+      "name": "Condensate Can",
+      "category": "water",
+      "size": [1, 1],
+      "max_stack": 3,
+      "hunger": 0,
+      "thirst": 28,
+      "health": 0,
+      "description": "Filtered pipe condensate with a metallic aftertaste."
+    },
+    {
+      "id": "water_flask",
+      "name": "Water Flask",
+      "category": "water",
+      "size": [1, 2],
+      "max_stack": 2,
+      "hunger": 0,
+      "thirst": 52,
+      "health": 0,
+      "description": "Riveted steel canteen filled with clean upper-floor water."
+    },
+    {
+      "id": "bandage_roll",
+      "name": "Field Bandage",
+      "category": "medical",
+      "size": [1, 1],
+      "max_stack": 3,
+      "hunger": 0,
+      "thirst": 0,
+      "health": 35,
+      "description": "Coarse sterile gauze for cuts, burns, and hard landings."
+    },
+    {
+      "id": "fuse_cell",
+      "name": "Mantle Fuse Cell",
+      "category": "tool",
+      "size": [1, 2],
+      "max_stack": 1,
+      "hunger": 0,
+      "thirst": 0,
+      "health": 0,
+      "description": "Heavy ceramic-cased power fuse used in service lifts and gate panels."
+    },
+    {
+      "id": "brass_coil",
+      "name": "Copper Coil",
+      "category": "scrap",
+      "size": [2, 1],
+      "max_stack": 2,
+      "hunger": 0,
+      "thirst": 0,
+      "health": 0,
+      "description": "Spool of salvaged foundry winding wire. Valued by market repairers."
+    },
+    {
+      "id": "salvaged_relay",
+      "name": "Salvaged Relay",
+      "category": "scrap",
+      "size": [2, 2],
+      "max_stack": 1,
+      "hunger": 0,
+      "thirst": 0,
+      "health": 0,
+      "description": "Intact inter-stack signalling assembly pulled from a bridge junction."
+    }
+  ]
+}

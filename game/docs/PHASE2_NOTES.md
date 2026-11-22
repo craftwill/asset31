@@ -37,11 +37,8 @@ Everything is sampled nearest-mipmap.
   There is no global volumetric haze.
 
 ## Known deviations from the references
-- The 300s/100s vista is darker and less amber than the video; the haze tone needs a grading pass.
-- The 550s crowd figures are blocky stand-ins without faces or props; the video shows varied clothing and hats.
-- The 175s lattice elevator interior (a vast cylindrical shaft) isn't built; the gap shafts are square lattices seen from outside.
+- *(Improved in Phase 5)* Warm amber haze balanced for `300s`, crowd silhouettes gained conditional hats/coats/packs, and a reachable `175s` cylindrical mining shaft (`EL-CYL-77`) was built off the East Edge Gate; see `PHASE3_4_NOTES.md` and `docs/phase3_shots/`.
 - Frames 350s (agricultural), 450s and 475s (nature floor) and 075s/625s (planet from orbit) are outside the slice's playable route and not built.
-- The room window shows only a few lit windows across the street; the 000s frame shows more.
 
 ## Verification
 - Route autopilot (`--autopilot=12`): room → door → side street → market → avenue → foundry → gate → bridge → STK-0413.

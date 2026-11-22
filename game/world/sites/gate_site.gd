@@ -46,25 +46,42 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var corona_mat := &"corona_cool" if _cool else &"corona"
 	var lcol := SliceMaterials.COOL if _cool else SliceMaterials.WARM
 
-	# Plaza floor and the hazard band at the drop edge.
+	# Plaza floor and the hazard band at the drop edge (with opening for Mining Shaft 77-N on departure north side).
 	_gb(Vector3(0, -0.1, -ow + 10), Vector3(240, 0.03, ow - 10), &"concrete_floor")
-	_gb(Vector3(-_wall + 0.5, -0.05, -ow), Vector3(-_wall + 2.5, 0.05, -bridge_half), &"hazard")
+	if not _cool:
+		_gb(Vector3(-_wall + 0.5, -0.05, -ow), Vector3(-_wall + 2.5, 0.05, -183.0), &"hazard")
+		_gb(Vector3(-_wall + 0.5, -0.05, -177.0), Vector3(-_wall + 2.5, 0.05, -bridge_half), &"hazard")
+	else:
+		_gb(Vector3(-_wall + 0.5, -0.05, -ow), Vector3(-_wall + 2.5, 0.05, -bridge_half), &"hazard")
 	_gb(Vector3(-_wall + 0.5, -0.05, bridge_half), Vector3(-_wall + 2.5, 0.05, ow), &"hazard")
 
-	# Edge railing with a glowing handrail (frame 125s), open at the bridge.
+	# Edge railing with a glowing handrail (frame 125s), open at the bridge and Mining Shaft 77-N spur.
 	var posts: Array = []
-	for side in [-1.0, 1.0]:
-		var za: float = side * bridge_half
-		var zb: float = side * ow
+	var rail_spans: Array = []
+	if not _cool:
+		rail_spans = [[-ow, -183.0], [-177.0, -bridge_half], [bridge_half, ow]]
+	else:
+		rail_spans = [[-ow, -bridge_half], [bridge_half, ow]]
+	for sp: Array in rail_spans:
+		var z0: float = sp[0]
+		var z1: float = sp[1]
 		var xr := -_wall + 0.4
-		_gb(Vector3(xr - 0.05, 0, minf(za, zb)), Vector3(xr + 0.05, 1.15, maxf(za, zb)), &"structure", _body).visible = false
-		_gb(Vector3(xr - 0.04, 1.08, minf(za, zb)), Vector3(xr + 0.04, 1.14, maxf(za, zb)), &"rail_glow")
-		_gb(Vector3(xr - 0.03, 0.55, minf(za, zb)), Vector3(xr + 0.03, 0.6, maxf(za, zb)), &"structure")
-		var z := minf(za, zb)
-		while z <= maxf(za, zb):
-			posts.append({ "c": g(xr, 0.54, z), "s": Vector3(0.08, 1.08, 0.08) })
+		_gb(Vector3(xr - 0.05, 0, z0), Vector3(xr + 0.05, 1.15, z1), &"structure", _body).visible = false
+		_gb(Vector3(xr - 0.04, 1.08, z0), Vector3(xr + 0.04, 1.14, z1), &"rail_glow")
+		_gb(Vector3(xr - 0.03, 0.55, z0), Vector3(xr + 0.03, 0.6, z1), &"structure")
+		var z := z0
+		while z <= z1:
+			posts.append({ "c": g(xr, 0.535, z), "s": Vector3(0.06, 1.07, 0.06) })
 			z += 2.0
 	SliceMaterials.add_multimesh(self, posts, &"structure")
+	# Departure-side sign & bollards marking the walkable catwalk out to Cylindrical Mining Shaft 77-N.
+	if not _cool:
+		_gb(Vector3(-30.1, 0, -184.5), Vector3(-29.9, 3.3, -184.3), &"structure", _body)
+		_gb(Vector3(-30.15, 2.2, -185.7), Vector3(-29.85, 3.1, -183.1), &"structure")
+		SliceMaterials.add_sign(self, g(-29.8, 2.65, -184.4), "MINING SHAFT 77-N\nDEEP DESCENT →", 0.009, Color(1.0, 0.86, 0.56), -_sx * PI * 0.5)
+		var sh_l := SliceMaterials.make_lamp_light(SliceMaterials.WARM, 1.5, 16.0)
+		sh_l.position = g(-32.0, 3.4, -180.0)
+		add_child(sh_l)
 
 	# Gate frame: heavy beams in front of the opening edges and lintel.
 	_gb(Vector3(0, 0, -ow), Vector3(12, oh + 12, -ow + 12), &"structure_world", _body)
@@ -74,13 +91,36 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var big_text := "BR-077-A  ·  STK-0413  ·  3.0 KM" if not _cool else "STK-0413  ·  FLOOR 77  ·  WEST ARRIVAL"
 	SliceMaterials.add_sign(self, g(12.2, oh - 2.0, 0), big_text, 0.4, Color(1.0, 0.82, 0.5) if not _cool else Color(0.8, 0.9, 1.0), sign_rot)
 
-	# Human-scale route signs at the bridge head.
+	# Human-scale route signs at the bridge head, with localized sign lighting.
+	var sign_glows: Array = []
 	for side in [-1.0, 1.0]:
 		var zc: float = side * 9.0
 		_gb(Vector3(-30.1, 0, zc - 0.08), Vector3(-29.9, 3.2, zc + 0.08), &"structure", _body)
 		_gb(Vector3(-30.15, 2.2, zc - 1.1), Vector3(-29.85, 3.0, zc + 1.1), &"structure")
+		_gb(Vector3(-29.7, 3.15, zc - 0.25), Vector3(-29.4, 3.28, zc + 0.25), light_mat)
+		sign_glows.append(g(-29.55, 3.12, zc))
+		var sl := SliceMaterials.make_lamp_light(lcol, 1.1, 9.0)
+		sl.position = g(-29.1, 2.9, zc)
+		add_child(sl)
 		var txt := ("BR-077-A" if side < 0 else "STK-0413 3.0 KM") if not _cool else ("STK-0412 3.0 KM" if side < 0 else "BR-077-A")
 		SliceMaterials.add_sign(self, g(-29.8, 2.6, zc), txt, 0.009, Color(1.0, 0.88, 0.6), sign_rot)
+
+	# Restrained threshold bollards through the 40 m wall passage onto the bridge
+	# so the transition from dark plaza to bridge head reads cleanly.
+	var bollards: Array = []
+	var b_caps: Array = []
+	for xp in [8.0, -6.0, -20.0, -34.0]:
+		for side in [-1.0, 1.0]:
+			var zb: float = side * (bridge_half + 1.1)
+			bollards.append({ "c": g(xp, 0.55, zb), "s": Vector3(0.28, 1.1, 0.28) })
+			b_caps.append({ "c": g(xp, 1.17, zb), "s": Vector3(0.22, 0.14, 0.22) })
+			sign_glows.append(g(xp, 1.2, zb))
+			var bl := SliceMaterials.make_lamp_light(lcol, 1.05, 13.0)
+			bl.position = g(xp, 1.45, side * (bridge_half - 0.4))
+			add_child(bl)
+	SliceMaterials.add_multimesh(self, bollards, &"structure")
+	SliceMaterials.add_multimesh(self, b_caps, light_mat)
+	SliceMaterials.add_coronas(self, sign_glows, 1.4, corona_mat)
 
 	# Light masts aimed at the bridge head.
 	var heads: Array = []
@@ -99,15 +139,46 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 		spot.light_volumetric_fog_energy = 1.0
 		add_child(spot)
 		spot.set_meta(&"aim", g(-30, 0, side * 6.0))
+		# Subtle inner-plaza ground pool so the dark plaza reads at the gate approach.
+		var pl := SliceMaterials.make_lamp_light(lcol, 1.8, 34.0)
+		pl.position = g(24.0, 7.5, side * 20.0)
+		add_child(pl)
 	SliceMaterials.add_coronas(self, heads, 7.0, corona_mat)
 
-	# Shelter booth: a stop point before the crossing.
-	_gb(Vector3(20, -0.5, -48), Vector3(28, 3.0, -40), &"plate", _metal)
-	_gb(Vector3(19.6, 3.0, -48.4), Vector3(28.4, 3.2, -39.6), &"structure")
-	_gb(Vector3(19.95, 1.2, -46), Vector3(20.0, 2.2, -42), &"window_glow")
-	var booth_light := SliceMaterials.make_lamp_light(lcol, 1.2, 10.0)
-	booth_light.position = g(18.5, 2.0, -44)
+	# Enterable shelter booth: open doorway on the plaza-facing wall (x' = 20, z = -45.5..-44.1),
+	# riveted plate walls, wood floor, bench, warm interior lamp, and persistent supply cache inside.
+	_gb(Vector3(20.1, -0.08, -47.9), Vector3(27.9, 0.04, -40.1), &"floor_wood", _metal)
+	_gb(Vector3(19.6, 3.0, -48.4), Vector3(28.4, 3.25, -39.6), &"structure", _body)
+	# Back (x'=28), north (z=-48), south (z=-40) walls.
+	_gb(Vector3(27.7, 0.0, -48.0), Vector3(28.0, 3.0, -40.0), &"plate", _metal)
+	_gb(Vector3(20.0, 0.0, -48.0), Vector3(27.7, 3.0, -47.7), &"plate", _metal)
+	_gb(Vector3(20.0, 0.0, -40.3), Vector3(27.7, 3.0, -40.0), &"plate", _metal)
+	# Front wall (x'=20..20.3) split around doorway z in [-45.5, -44.1] (height 2.25 m).
+	_gb(Vector3(20.0, 0.0, -47.7), Vector3(20.3, 3.0, -45.5), &"plate", _metal)
+	_gb(Vector3(20.0, 0.0, -44.1), Vector3(20.3, 3.0, -40.3), &"plate", _metal)
+	_gb(Vector3(20.0, 2.25, -45.5), Vector3(20.3, 3.0, -44.1), &"plate", _metal)
+	# Interior bench + exterior crates + interior hanging lamp.
+	_gb(Vector3(25.2, 0.04, -47.5), Vector3(27.4, 0.52, -46.8), &"wood", _body)
+	_gb(Vector3(18.7, 0.03, -41.4), Vector3(19.8, 0.9, -40.3), &"container_rust", _body)
+	_gb(Vector3(18.9, 0.9, -41.2), Vector3(19.6, 1.5, -40.5), &"container_grey")
+	_gb(Vector3(23.8, 2.78, -44.0), Vector3(24.2, 2.95, -43.6), light_mat)
+	var booth_light := SliceMaterials.make_lamp_light(lcol, 1.5, 11.0)
+	booth_light.position = g(24.0, 2.6, -43.8)
 	add_child(booth_light)
+	var door_lamp := SliceMaterials.make_lamp_light(lcol, 1.1, 8.0)
+	door_lamp.position = g(19.2, 2.5, -44.8)
+	add_child(door_lamp)
+	# Lootable expedition staging / arrival cache tucked inside the shelter booth.
+	if not _cool:
+		add_child(LootContainer.create(
+			"CONT-GATE-SHELTER", "Gate Shelter Cache", "crate",
+			g(26.8, 0.04, -41.4), sign_rot,
+			[["ration_tin", 2], ["water_flask", 1], ["bandage_roll", 1], ["fuse_cell", 1]], 5, 4))
+	else:
+		add_child(LootContainer.create(
+			"CONT-ARRIVAL-CACHE", "Arrival Locker", "locker",
+			g(26.8, 0.04, -41.4), sign_rot,
+			[["water_flask", 2], ["salvaged_relay", 1], ["fuse_cell", 1]], 5, 4))
 
 	if _cool:
 		_arrival_extras(ow, oh)
@@ -138,7 +209,7 @@ func _departure_extras() -> void:
 	_gb(Vector3(160, 0, -170), Vector3(162, 38, -168), &"structure", _body)
 	_gb(Vector3(58, 38, -216), Vector3(164, 41, -212), &"structure")
 	_gb(Vector3(58, 38, -171), Vector3(164, 41, -167), &"structure")
-	_gb(Vector3(100, 36, -214), Vector3(106, 41, -169), &"container_grey")
+	_gb(Vector3(100, 35.5, -214), Vector3(106, 39.8, -169), &"container_grey")
 	var crowd := Crowd.new()
 	add_child(crowd)
 	crowd.setup([{ "p": g(22, 0, -37), "yaw": 0.4 }, { "p": g(-20, 0, 3), "yaw": PI * 0.5 * _sx }],
@@ -167,3 +238,6 @@ func _arrival_extras(ow: float, oh: float) -> void:
 	var crowd := Crowd.new()
 	add_child(crowd)
 	crowd.setup(statics, [{ "a": g(10, 0, 40), "b": g(120, 0, 60) }, { "a": g(15, 0, -80), "b": g(90, 0, -20) }], 4131, 0.25)
+	# Arrival checkpoint service kiosk beside the west arrival shelter.
+	_gb(Vector3(19.2, 0.03, -36.8), Vector3(20.1, 2.2, -35.6), &"container_grey", _body)
+	_gb(Vector3(19.16, 1.25, -36.55), Vector3(19.2, 1.75, -35.85), &"sign_cyan")

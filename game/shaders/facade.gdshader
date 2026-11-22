@@ -9,6 +9,7 @@ shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_lambert, specular_disabled;
 
 #include "res://shaders/retro_common.gdshaderinc"
+#include "res://shaders/window_interior.gdshaderinc"
 
 uniform sampler2D brick_tex : source_color, filter_nearest_mipmap_anisotropic, repeat_enable;
 uniform sampler2D concrete_tex : source_color, filter_nearest_mipmap_anisotropic, repeat_enable;
@@ -37,6 +38,11 @@ uniform float grime_height = 5.0;
 uniform float ceiling_lights = 0.0;
 uniform float ceiling_light_spacing = 64.0;
 uniform float ceiling_light_radius = 1.6;
+uniform float no_snap = 0.0;
+uniform float fade_start = 0.0;
+uniform float fade_end = 0.0;
+uniform float floor_bands = 0.0;
+uniform float interior_enabled = 1.0;
 
 varying vec3 v_pos;
 varying vec3 v_nrm;
@@ -44,33 +50,57 @@ varying flat float v_seed;
 varying flat float v_zone;
 varying float v_base;
 varying vec3 v_size;
+varying float v_dist;
+varying float v_ly;
+varying vec3 v_ray;
 
 void vertex() {
 	vec3 sc = retro_object_scale(MODEL_MATRIX, INSTANCE_CUSTOM);
 	v_size = sc;
+	vec3 rpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	vec3 wpos = rpos + world_origin;
+	v_ly = wpos.y;
+	vec3 ray_r = rpos - INV_VIEW_MATRIX[3].xyz;
 	if (use_world > 0.5) {
-		v_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz + world_origin;
+		v_pos = wpos;
 		v_nrm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 		v_base = world_floor_y;
+		v_ray = ray_r;
 	} else {
 		v_pos = VERTEX * sc;
 		v_nrm = NORMAL;
 		v_base = -0.5 * sc.y + base_sink;
+		vec3 ax = normalize(MODEL_MATRIX[0].xyz);
+		vec3 ay = normalize(MODEL_MATRIX[1].xyz);
+		vec3 az = normalize(MODEL_MATRIX[2].xyz);
+		v_ray = vec3(dot(ray_r, ax), dot(ray_r, ay), dot(ray_r, az));
 	}
 	// INSTANCE_CUSTOM.x = zone + seed * 0.9 (zone 0 urban, 1 residential, 2 industrial)
 	v_zone = floor(INSTANCE_CUSTOM.x + 0.001);
 	v_seed = floor(fract(INSTANCE_CUSTOM.x + 0.001) * 512.0 + 0.5);
-	POSITION = retro_snap(PROJECTION_MATRIX * (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)));
+	vec4 mv = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	v_dist = -mv.z;
+	vec4 clip = PROJECTION_MATRIX * mv;
+	POSITION = (no_snap > 0.5) ? clip : retro_snap_stable(clip, sc);
 }
 
-vec3 window_lights(vec2 uv, float level, float seed, float litf) {
-	vec2 cell = bay * exp2(level);
+// Analytical 1D box-filter coverage for a centred rectangle [-hw, hw] inside
+// a unit cell, conserving energy across pixel boundaries so windows never pop.
+float box_cov(vec2 f, vec2 hw, vec2 aa) {
+	vec2 p = f - vec2(0.5);
+	vec2 a = max(aa, vec2(1e-4));
+	vec2 cov = max(min(p + 0.5 * a, hw) - max(p - 0.5 * a, -hw), vec2(0.0)) / a;
+	return cov.x * cov.y;
+}
+
+vec3 window_lights(vec2 uv, float level, float seed, float litf, vec2 fw_base) {
+	float sc_lvl = exp2(level);
+	vec2 cell = bay * sc_lvl;
 	vec2 g = uv / cell;
 	vec2 id = floor(g);
 	vec2 f = fract(g);
-	vec2 dd = abs(f - vec2(0.5, 0.5));
 	vec2 hw = window_frac * 0.5;
-	float win = step(dd.x, hw.x) * step(dd.y, hw.y);
+	float win = box_cov(f, hw, fw_base / sc_lvl);
 	vec2 sid = id + seed + level * 131.0;
 	float h = hash12(sid);
 	float h2 = hash12(sid.yx + 19.7);
@@ -105,7 +135,7 @@ void fragment() {
 			style = r < 0.35 ? 0.0 : (r < 0.75 ? 1.0 : 2.0);
 		} else if (v_zone < 1.5) {
 			style = r < 0.6 ? 0.0 : (r < 0.9 ? 1.0 : 2.0);
-			litf *= 0.55;
+			litf *= 0.68;
 		} else {
 			style = r < 0.1 ? 0.0 : (r < 0.5 ? 1.0 : 2.0);
 			litf *= 0.25;
@@ -114,9 +144,29 @@ void fragment() {
 	vec3 btint = tint * mix(0.82, 1.12, hash12(vec2(v_seed, 9.0)));
 
 	vec2 g = uv / bay;
-	vec2 fw = fwidth(g);
-	float far_t = smoothstep(0.3, 0.85, max(fw.x, fw.y));
-	float wlod = max(0.0, log2(max(fw.x, fw.y) / 0.25));
+	vec2 fw = max(fwidth(g), vec2(1e-4));
+	float fw_max = max(fw.x, fw.y);
+	float fw_min = max(min(fw.x, fw.y), 1e-4);
+	float aniso = fw_max / fw_min;
+	float far_t = smoothstep(0.22, 0.65, fw_max);
+	float wlod = max(0.0, log2(fw_max / 0.20));
+	float ceil_px_w = max(length(fwidth(v_pos.xz)), 1e-4);
+
+	if (fade_end > 0.0 && v_dist > fade_start) {
+		float ft = clamp((v_dist - fade_start) / max(fade_end - fade_start, 1.0), 0.0, 1.0);
+		if (ft >= retro_bayer(FRAGCOORD.xy)) {
+			discard;
+		}
+	}
+
+	if (floor_bands > 0.5) {
+		// Macro floor-slab dark bands (900 m pitch, ~60 m slab) and district-scale
+		// occupancy variation so distant stack walls read as layered floors.
+		float fy = fract((v_ly - world_floor_y + 60.0) / 900.0);
+		float slab_band = smoothstep(0.0, 0.015, fy) * (1.0 - smoothstep(0.065, 0.085, fy));
+		float macro = mix(0.45, 1.35, hash12(floor(vec2(uv.x, v_ly - world_floor_y) / 260.0) + vec2(37.0, 11.0)));
+		litf *= mix(macro, 0.12, slab_band);
+	}
 
 	vec3 albedo;
 	vec3 emit = vec3(0.0);
@@ -132,7 +182,7 @@ void fragment() {
 			vec2 cg = tuv / ceiling_light_spacing;
 			vec2 id = floor(cg);
 			vec2 f = (fract(cg) - 0.5) * ceiling_light_spacing;
-			float px_w = max(length(fwidth(tuv)), 1e-4);
+			float px_w = ceil_px_w;
 			// Density and intensity vary by district-sized regions.
 			float density = mix(0.35, 0.9, hash12(floor(id / 7.0) + 51.0));
 			float on = step(hash12(id + 17.0), density);
@@ -187,11 +237,11 @@ void fragment() {
 			vec2 id = floor(g);
 			vec2 f = fract(g);
 			vec2 hw = window_frac * 0.5;
-			vec2 dd = abs(f - vec2(0.5, 0.5));
-			float win = step(dd.x, hw.x) * step(dd.y, hw.y);
+			float win = box_cov(f, hw, fw);
 			vec2 fr = hw + vec2(0.06, 0.05);
-			float frame = step(dd.x, fr.x) * step(dd.y, fr.y) * (1.0 - win);
-			float sill = step(dd.x, fr.x) * step(abs(f.y - 0.5 + fr.y + 0.03), 0.03);
+			float outer = box_cov(f, fr, fw);
+			float frame = max(outer - win, 0.0);
+			float sill = box_cov(vec2(f.x, f.y + fr.y + 0.03), vec2(fr.x, 0.03), fw);
 			float cover = window_frac.x * window_frac.y;
 			vec3 a_near = mix(albedo, frame_color, max(frame, sill));
 			a_near = mix(a_near, glass_color * mix(0.7, 1.4, hash12(id + v_seed + 2.0)), win);
@@ -199,9 +249,37 @@ void fragment() {
 			if (shopfront < 0.5 || h > shop_height + 0.4) {
 				float l0 = floor(wlod);
 				float lt = fract(wlod);
-				emit += mix(window_lights(uv, l0, v_seed, litf), window_lights(uv, l0 + 1.0, v_seed, litf), lt);
+				vec3 e_lod = mix(window_lights(uv, l0, v_seed, litf, fw), window_lights(uv, l0 + 1.0, v_seed, litf, fw), lt);
+				float eff_alt = alt_fraction * (1.0 - litf);
+				vec3 e_avg = (window_color * litf + window_color_alt * eff_alt) * 0.725 * cover * window_energy;
+				float graze_t = smoothstep(3.5, 8.0, aniso) * smoothstep(0.15, 0.45, fw_max);
+				vec3 e_far = mix(e_lod, e_avg, graze_t);
+				// Near/mid distance: single-pass ray-box procedural 3D room interiors
+				// that cross-fade seamlessly into the far emissive LOD with zero pop.
+				float interior_k = (interior_enabled > 0.5) ? (1.0 - smoothstep(0.12, 0.26, fw_max)) : 0.0;
+				if (interior_k > 0.001 && win > 0.01) {
+					vec2 sid0 = id + v_seed;
+					float h_lit = hash12(sid0);
+					float h_alt = hash12(sid0.yx + 19.7);
+					float is_lit = step(h_lit, litf);
+					float is_alt = step(1.0 - alt_fraction, h_alt) * (1.0 - is_lit);
+					float flick = 0.4 + 0.65 * hash12(sid0 + 3.1);
+					vec3 lcol = mix(window_color, window_color_alt, is_alt);
+					float detail_k = 1.0 - smoothstep(0.05, 0.15, fw_max);
+					vec3 e_int = mantle_window_interior(
+						f, hw, bay, normalize(n), normalize(v_ray),
+						sid0, v_zone, lcol, max(is_lit, is_alt), flick, window_energy,
+						detail_k, -1.0, -1.0) * win;
+					emit += mix(e_far, e_int, interior_k);
+				} else {
+					emit += e_far;
+				}
 			}
 		}
+	}
+	if (fade_end > 0.0) {
+		float e_fade = 1.0 - smoothstep(max(0.0, fade_start - 700.0), fade_start, v_dist);
+		emit *= e_fade;
 	}
 	ALBEDO = albedo;
 	ROUGHNESS = 0.95;
