@@ -16,7 +16,7 @@ To regenerate the audio, run `--headless --path . --script res://tools/gen_audio
 | Shift / Ctrl / Space | sprint / crouch / jump |
 | Stand on the lift for 1 s | ride to the roof or back down; it comes to whichever landing you wait at |
 | F3 | dev overlay (logical coordinates, origin sector, region, distance to the neighbouring stack) |
-| F5 / F9 | quick save / quick load (stores logical coordinates) |
+| F5 / F9 | quick save / quick load (stores logical coordinates; `%APPDATA%\Asset31\asset31_save.json`, synced by Steam Auto-Cloud, see docs/STEAM_CLOUD.md) |
 | F6 | vertex snap: off / subtle / heavy |
 | F7 | dither post-process on/off |
 

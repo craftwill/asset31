@@ -9,6 +9,9 @@ config/name="Asset31"
 config/description="Asset31 vertical slice: the Mantle"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
+; Pin user:// to %APPDATA%\Asset31 so the Steam Auto-Cloud root never moves. See docs/STEAM_CLOUD.md.
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Asset31"
 
 [autoload]
 

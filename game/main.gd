@@ -10,7 +10,11 @@ extends Node3D
 ##   --no-post / --snap=N  disable dither / set vertex snap mode (0 off, 1 subtle, 2 heavy)
 
 const WORLD_DATA := "res://data/world/mantle_slice.json"
+## Synced by Steam Auto-Cloud (WinAppDataRoaming/Asset31, pattern asset31_save.json);
+## keep the name and folder stable. See docs/STEAM_CLOUD.md.
 const SAVE_PATH := "user://asset31_save.json"
+## Where saves lived before user:// was pinned to %APPDATA%/Asset31 (relative to OS.get_data_dir()).
+const LEGACY_SAVE_REL := "Godot/app_userdata/Asset31/asset31_save.json"
 const RETRO_POST := preload("res://shaders/retro_post.gdshader")
 const STREAM_INTERVAL := 0.25
 
@@ -109,6 +113,7 @@ func _ready() -> void:
 		if arg == "--zfight-lint" or arg == "--selftest":
 			SliceMaterials.record_lint = true
 	ItemDB.ensure_loaded()
+	_migrate_legacy_save()
 	world_def = JSON.parse_string(FileAccess.get_file_as_string(WORLD_DATA))
 	atmosphere = Atmosphere.new()
 	atmosphere.name = "Atmosphere"
@@ -735,11 +740,34 @@ func _save(path := SAVE_PATH) -> void:
 		"expresses": expresses,
 		"journal": journal_ui.serialize() if journal_ui != null else {},
 	}
-	var f := FileAccess.open(path, FileAccess.WRITE)
-	f.store_string(JSON.stringify(data, "  "))
+	# Write to a sibling temp file and swap it in, so a crash mid-write can never
+	# leave a truncated save for Steam Cloud to upload over the good copy.
+	var tmp := path + ".tmp"
+	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	var ok := f != null and f.store_string(JSON.stringify(data, "  "))
+	if f != null:
+		f.close()
+	if ok:
+		ok = DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), ProjectSettings.globalize_path(path)) == OK
+	if not ok:
+		push_error("[Asset31] save to %s failed (%s)" % [path, error_string(FileAccess.get_open_error())])
+		if hud != null:
+			hud.show_toast("Save FAILED")
+		return
 	print("[Asset31] saved at logical %s" % [lp])
 	if hud != null:
 		hud.show_toast("Saved expedition state")
+
+
+## One-time copy of a save written before user:// was pinned to %APPDATA%/Asset31.
+## Copies rather than moves, so the old file stays as a backup.
+func _migrate_legacy_save() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		return
+	var legacy := OS.get_data_dir().path_join(LEGACY_SAVE_REL)
+	if FileAccess.file_exists(legacy):
+		var err := DirAccess.copy_absolute(legacy, ProjectSettings.globalize_path(SAVE_PATH))
+		print("[Asset31] migrated legacy save from %s (%s)" % [legacy, error_string(err)])
 
 
 func _load(path := SAVE_PATH) -> bool:
