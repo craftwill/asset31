@@ -9,14 +9,18 @@ signal closed
 const LANDMARKS := [
 	["home", "STK-0412 · Home Shelter (Floor 77, 41,000 m)"],
 	["market", "STK-0412 · Market Street"],
+	["highway", "STK-0412 · Trunk Route 77-E (Megablock Highway)"],
 	["foundry", "STK-0412 · Foundry Hall / North Service Bypass"],
 	["edge", "STK-0412 · East Edge Gate & TRAM-077 Spur"],
 	["shaft", "EL-CYL-77 · Mining Shaft 77-N & Undercroft 76-B"],
 	["crust", "CRUST-00 · Asset 31 Planetary Surface (0 m)"],
-	["gap", "BR-077-A · 3.0 km Inter-Stack Span & 1.5 km Shelter"],
+	["gap", "BR-077-A · 3.0 km Twin-Stack Span & 1.5 km Shelter"],
 	["arrival", "STK-0413 · West Arrival Gate"],
-	["hydroponics", "STK-0413 · Hydroponic Bay 413-A"],
-	["preserve", "STK-0413 · Ecological Preserve 413-B (220 m Atrium)"],
+	["hydroponics", "STK-0413 · Hydroponic Bay 413-A (700×600 m)"],
+	["preserve", "STK-0413 · Ecological Preserve 413-B (1 km × 820 m Atrium)"],
+	["glass_terrace", "STK-0413 · Glass Curtain Terrace 413-S (+24 m)"],
+	["express_south", "STA-0413-N · Inter-Stack Express Terminal (EXP-077)"],
+	["stk0414", "STK-0414 · South Overlook Terminal (17.5 km North)"],
 ]
 
 var is_open := false
@@ -91,8 +95,8 @@ func _build_ui() -> void:
 	v.add_child(sep)
 
 	var help := Label.new()
-	help.text = "CONTROLS:  [WASD] Move  [Shift] Sprint  [E] Interact / Repair / Read  [Tab / I] Pack  [M] Route Diagram  [J] Field Log  [F] Work-Lamp  [F5 / F9] Save / Load\n" \
-		+ "PREVIEW JUMPS (Ctrl+key):  1 Home · 2 Street · 3 Vista · 4 Market · 5/6/7 Foundry · 8 Rail Tram · 9 Shaft 77-N · Bksp Undercroft · 0 Bridge 1.5km · - Arrival · = Hydroponics · [ Preserve · ] Crust 0m"
+	help.text = "CONTROLS:  [WASD] Move  [Shift] Sprint  [E] Interact / Repair / Read  [Tab / I] Pack  [M] Route Diagram  [J] Field Log  [P] Orbital Planet View  [F] Work-Lamp  [F11] Fullscreen  [F5 / F9] Save / Load\n" \
+		+ "PREVIEW JUMPS (Ctrl+key):  1 Home · 2 Street · 3 Vista · 4 Market · ; Highway · 5/6/7 Foundry · 8 Tram · 9 Shaft · Bksp Undercroft · 0 Bridge · - Arrival · = Hydro · [ Preserve · ' Glass · . Express · / STK-0414 · ] Crust"
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD
 	help.add_theme_font_size_override(&"font_size", 8)
 	help.add_theme_color_override(&"font_color", Color(0.72, 0.64, 0.50))

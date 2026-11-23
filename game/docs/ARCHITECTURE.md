@@ -51,6 +51,7 @@ and the arrival point.
 ```
 project.godot              settings, shader globals
 main.gd / scenes/main.tscn entry point: build world, player, gameplay, save/load, test hooks
+scenes/planet_view.tscn    standalone orbital space view of Asset 31 (refs 075s, 625s)
 scenes/window_interior_test.tscn  standalone procedural window interior showcase
 core/world_origin.gd       floating origin (autoload)
 core/world_anchor.gd       node pinned to a logical position
@@ -69,6 +70,7 @@ world/city_layout.gd       deterministic floor layout (slabs, courtyards, 3-tier
 world/stack_runtime.gd     stack builder + streaming
 world/connection_runtime.gd
 world/mining_shaft.gd      reachable 175s cylindrical mining shaft + 3 vertical strata + rideable 220 m lift to Undercroft 76-B
+world/planet_view.gd       orbital space view of Asset 31 (shell, 360° arterial network, starburst hubs, starfield)
 world/slice_materials.gd   shared material family + instancing helpers
 world/texture_factory.gd   generated pixel textures
 world/sites/               authored places: home (+lift), market, foundry (+bypass/pipes), gate plazas

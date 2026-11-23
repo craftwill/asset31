@@ -54,11 +54,18 @@ class _DiagramCanvas extends Control:
 			draw_line(Vector2(gx_p, ave_y - 5), Vector2(gx_p, ave_y + 9), Color(0.88, 0.68, 0.34, 0.7), 1.0)
 		# Mid-span shelter marker on north side of bridge.
 		draw_rect(Rect2(382, ave_y - 13, 10, 8), Color(0.62, 0.78, 0.52, 0.9), true)
-		# Hydroponic Bay 413-A & Ecological Preserve 413-B (north of STK-0413 West Arrival).
+		# Hydroponic Bay 413-A, Ecological Preserve 413-B, Glass Terrace 413-S & EXP-077 North Express Viaduct.
 		draw_rect(Rect2(486, 74, 38, 22), Color(0.86, 0.34, 0.78, 0.25), true)
 		draw_rect(Rect2(486, 74, 38, 22), Color(0.96, 0.52, 0.88, 0.85), false, 1.2)
 		draw_rect(Rect2(482, 42, 46, 30), Color(0.32, 0.78, 0.42, 0.25), true)
 		draw_rect(Rect2(482, 42, 46, 30), Color(0.54, 0.94, 0.62, 0.85), false, 1.2)
+		draw_rect(Rect2(486, 160, 40, 22), Color(0.72, 0.82, 0.78, 0.25), true)
+		draw_rect(Rect2(486, 160, 40, 22), Color(0.84, 0.92, 0.88, 0.85), false, 1.2)
+		# EXP-077 Express Viaduct VD-077-N heading north out of STA-0413-N toward distant STK-0414 (17.5 km).
+		draw_line(Vector2(458, 74), Vector2(448, 74), Color(0.68, 0.86, 1.0, 0.9), 2.0)
+		draw_line(Vector2(448, 74), Vector2(448, 8), Color(0.68, 0.86, 1.0, 0.95), 2.4)
+		draw_line(Vector2(448, 8), Vector2(443, 15), Color(0.68, 0.86, 1.0, 0.95), 1.6)
+		draw_line(Vector2(448, 8), Vector2(453, 15), Color(0.68, 0.86, 1.0, 0.95), 1.6)
 		# Mining Shaft 77-N (cylindrical shaft north of East Edge Gate) + catwalk spur.
 		draw_line(Vector2(312, 74), Vector2(338, 74), Color(0.90, 0.68, 0.32, 0.85), 2.0)
 		draw_arc(Vector2(344, 74), 16.0, 0.0, TAU, 24, Color(0.92, 0.66, 0.30, 0.9), 1.5)
@@ -136,6 +143,8 @@ func _build_ui() -> void:
 		[Vector2(338, 140), "BR-077-A (3.0 km)\n+ TRAM-077 Spur", Color(0.95, 0.78, 0.44)],
 		[Vector2(356, 102), "1.5 km Shelter", Color(0.70, 0.86, 0.60)],
 		[Vector2(476, 98), "Bay 413-A + Preserve", Color(0.78, 0.96, 0.82)],
+		[Vector2(462, 184), "Glass Terrace", Color(0.84, 0.92, 0.88)],
+		[Vector2(346, 8), "↑ EXP-077 → STK-0414\n    (17.5 km North)", Color(0.74, 0.90, 1.0)],
 		[Vector2(462, 138), "West Arrival", Color(0.72, 0.84, 0.96)],
 		[Vector2(522, 186), "N", Color(0.95, 0.80, 0.52)],
 	]

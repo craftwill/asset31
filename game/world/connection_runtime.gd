@@ -97,7 +97,7 @@ func _build_bridge() -> void:
 	SliceMaterials.add_multimesh(self, rail_glows, &"rail_glow")
 	SliceMaterials.add_multimesh(self, mid_rails, &"structure")
 	SliceMaterials.add_multimesh(self, girders, &"structure")
-	SliceMaterials.add_multimesh(self, posts, &"structure_fade_near", 950.0)
+	SliceMaterials.add_multimesh(self, posts, &"structure_fade_near")
 	# Piers descending into the lower Mantle (caps sit strictly between girders, no coplanar faces).
 	var pd := float(def.pier_depth)
 	var spacing := float(def.pier_spacing)
@@ -134,7 +134,7 @@ func _build_bridge() -> void:
 		add_child(light)
 		x += ls
 		i += 1
-	SliceMaterials.add_multimesh(self, poles, &"structure_fade_mid", 1400.0)
+	SliceMaterials.add_multimesh(self, poles, &"structure_fade_mid")
 	SliceMaterials.add_multimesh(self, heads_warm, &"lamp")
 	SliceMaterials.add_multimesh(self, heads_cool, &"lamp_cool")
 	SliceMaterials.add_coronas(self, glows_warm, 1.8)
@@ -212,10 +212,10 @@ func _build_landmarks(_body: StaticBody3D, w: float, dt: float) -> void:
 						var clen := v.length()
 						var rz := atan2(-v.x, v.y)
 						cables.append({ "c": (p0 + p1) * 0.5, "s": Vector3(0.14, clen, 0.14), "r": Vector3(0.0, 0.0, rz) })
-			# Lower gantry crossbeam (10.2 m) + two upper structural tie-beams.
-			steel.append({ "c": Vector3(gx, 10.2, z_mid), "s": Vector3(1.1, 1.0, z_span + 1.6) })
-			steel.append({ "c": Vector3(gx, 28.0, z_mid), "s": Vector3(1.2, 1.3, z_span + 1.6) })
-			steel.append({ "c": Vector3(gx, 44.5, z_mid), "s": Vector3(1.3, 1.5, z_span + 1.6) })
+			# Lower gantry crossbeam (10.2 m) + two upper structural tie-beams (span inset inside pylon legs).
+			steel.append({ "c": Vector3(gx, 10.2, z_mid), "s": Vector3(1.1, 1.0, z_span + 1.2) })
+			steel.append({ "c": Vector3(gx, 28.0, z_mid), "s": Vector3(1.2, 1.3, z_span + 1.2) })
+			steel.append({ "c": Vector3(gx, 44.5, z_mid), "s": Vector3(1.3, 1.5, z_span + 1.2) })
 		else:
 			# Twin steel portal legs outside the deck & tram track + overhead cross-beam.
 			for z_col: float in [z_north, z_south]:
@@ -244,7 +244,7 @@ func _build_landmarks(_body: StaticBody3D, w: float, dt: float) -> void:
 		SliceMaterials.add_sign(self, Vector3(gx + sign_off, 10.2, 0.0), txt_west, 0.016, sign_col, PI * 0.5)
 		gx += step
 	SliceMaterials.add_multimesh(self, steel, &"structure")
-	SliceMaterials.add_multimesh(self, cables, &"structure_fade_far", 1850.0)
+	SliceMaterials.add_multimesh(self, cables, &"structure_fade_far")
 	SliceMaterials.add_multimesh(self, beacons, &"beacon_red")
 	SliceMaterials.add_multimesh(self, lamp_heads_warm, &"lamp")
 	SliceMaterials.add_multimesh(self, lamp_heads_cool, &"lamp_cool")
@@ -297,6 +297,20 @@ func _build_midspan_shelter(body: StaticBody3D, w: float, dt: float) -> void:
 		+ "stop here to catch your breath before pushing on to STK-0413.\n"
 		+ "Left spare cans and a relay in the footlocker for the next runner.",
 		Vector3(sx - 3.6, 0.52, z1 + 0.72), 0.25, "paper"))
+	# Wayside Shrine of The Continuum tucked cleanly against the shelter's west steel wall:
+	# oxidized copper vertical-spine & three-ring emblem (Matter, Life, Memory) + votive bulbs + weathered plaque.
+	var shrine := ContinuumEmblem.create(0.58, &"copper", &"structure", true)
+	shrine.position = Vector3(sx - 5.56, 1.98, zc)
+	shrine.rotation.y = PI * 0.5
+	add_child(shrine)
+	add_child(ReadableNote.create(
+		"NOTE-CONTINUUM-BRIDGE", "Wayside Shrine of The Continuum",
+		"THE CONTINUUM  ·  MATTER · LIFE · MEMORY\n\n"
+		+ "All that stands endures through connection.\n"
+		+ "Every girder, cable, shaft, and span is a vow against Severance.\n\n"
+		+ "When the Void Bell tolls from the deep chasm below,\n"
+		+ "hold fast to the rail and remember the bridge that carries you.",
+		Vector3(sx - 5.58, 1.40, zc + 1.15), PI * 0.5, "plaque"))
 
 
 func contains_local(p: Vector3) -> bool:

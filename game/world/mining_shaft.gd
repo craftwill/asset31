@@ -63,7 +63,7 @@ func _build() -> void:
 			walls.append({ "c": Vector3(nx * r_mid, 18.0 + h_hi * 0.5, nz * r_mid), "s": Vector3(chord + 1.0, h_hi, wall_t), "r": rot, "seed": float(i) * 0.04 })
 		else:
 			walls.append({ "c": Vector3(nx * r_mid, cy, nz * r_mid), "s": Vector3(chord + 1.0, h, wall_t), "r": rot, "seed": float(i) * 0.04 })
-	SliceMaterials.add_multimesh(self, walls, &"stack_wall")
+	SliceMaterials.add_multimesh(self, walls, &"shaft_wall")
 
 	# 2. Concentric structural ring girders & glowing rim strips down the cylinder.
 	var ring_lamps: Array = []
@@ -98,13 +98,13 @@ func _build() -> void:
 			lattice.append({ "c": Vector3(tx + c.x, cy, tz + c.y), "s": Vector3(1.1, h, 1.1) })
 		# Vertical glowing amber guide strip along the inward face (iconic 175s orange verticals).
 		guide_rails.append({ "c": Vector3(tx - cos(ang) * (ts * 0.5 + 0.6), cy, tz - sin(ang) * (ts * 0.5 + 0.6)), "s": Vector3(0.28, h, 0.28) })
-		var by := _bottom + 30.0
+		var by := _bottom + 25.0
 		while by < _top - 20.0:
 			lattice.append({ "c": Vector3(tx, by, tz - ts * 0.5), "s": Vector3(ts - 1.1, 0.6, 0.6) })
 			lattice.append({ "c": Vector3(tx, by, tz + ts * 0.5), "s": Vector3(ts - 1.1, 0.6, 0.6) })
 			lattice.append({ "c": Vector3(tx - ts * 0.5, by, tz), "s": Vector3(0.6, 0.6, ts - 1.1) })
 			lattice.append({ "c": Vector3(tx + ts * 0.5, by, tz), "s": Vector3(0.6, 0.6, ts - 1.1) })
-			by += 28.0
+			by += 25.0
 		if ti % 2 == 0:
 			var car := Node3D.new()
 			car.position = Vector3(tx, 0.0, tz)
@@ -114,10 +114,13 @@ func _build() -> void:
 			SliceMaterials.add_coronas(car, [Vector3(0, 0.5, 0)], 14.0, &"corona_soft")
 			_cars.append({ "node": car, "phase": rng.randf(), "speed": rng.randf_range(6.0, 14.0) })
 	# Lower visual cross-spanning truss girders cutting across the abyss below (175s composition)
+	# offset clear of the EL-DEEP-00 vertical express lane at (x = +11.5, z = +1.0),
 	# plus vertical ore-haulage conveyor pipe columns along 4 diagonal ribs (Stratum II -> III).
 	for ly_cross in [-135.0, -320.0, -560.0, -900.0, -1350.0]:
-		lattice.append({ "c": Vector3(0, ly_cross, 0), "s": Vector3(R * 1.96, 3.2, 4.0) })
-		lattice.append({ "c": Vector3(0, ly_cross - 35.0, 0), "s": Vector3(4.0, 3.2, R * 1.96) })
+		lattice.append({ "c": Vector3(0, ly_cross, -26.0), "s": Vector3(R * 1.92, 3.2, 4.0) })
+		lattice.append({ "c": Vector3(0, ly_cross, 26.0), "s": Vector3(R * 1.92, 3.2, 4.0) })
+		lattice.append({ "c": Vector3(-26.0, ly_cross - 35.0, 0), "s": Vector3(4.0, 3.2, R * 1.92) })
+		lattice.append({ "c": Vector3(26.0, ly_cross - 35.0, 0), "s": Vector3(4.0, 3.2, R * 1.92) })
 	var pipe_h := 120.0 - (_bottom + 80.0)
 	var pipe_cy := (120.0 + _bottom + 80.0) * 0.5
 	var beacons: Array = []
@@ -135,14 +138,13 @@ func _build() -> void:
 	SliceMaterials.add_multimesh(self, guide_rails, &"window_glow")
 	SliceMaterials.add_multimesh(self, beacons, &"beacon_red")
 
-	# Stratum III: Deep excavation abyss floor & distant planetary crust glow far below.
+	# Distant warm ember haze markers around the lower shaft throat (open center so EL-DEEP-00
+	# descends continuously all 41 km through to CRUST-00 without clipping any cap slab).
 	var abyss_y := _bottom + 40.0
-	SliceMaterials.add_box(self, null, Vector3(0, abyss_y - 12.0, 0), Vector3(R * 2.02, 24.0, R * 2.02), &"industrial_wall", false)
-	SliceMaterials.add_box(self, null, Vector3(0, abyss_y + 0.8, 0), Vector3(64.0, 1.2, 64.0), &"molten_slow", false)
-	var deep_glows: Array = [Vector3(0, abyss_y + 18.0, 0)]
+	var deep_glows: Array = []
 	for k in 4:
 		var ang_d := float(k) * PI * 0.5 + PI * 0.25
-		deep_glows.append(Vector3(cos(ang_d) * 72.0, abyss_y + 24.0, sin(ang_d) * 72.0))
+		deep_glows.append(Vector3(cos(ang_d) * 78.0, abyss_y + 24.0, sin(ang_d) * 78.0))
 	SliceMaterials.add_coronas(self, deep_glows, 48.0, &"corona_molten")
 
 	# 4. Walkable steel truss catwalk from STK-0412 East Edge Gate (x_local = -220)
@@ -162,9 +164,12 @@ func _build_catwalk(body: StaticBody3D, entry_x: float, R: float) -> void:
 	var cx_w := entry_x + len_w * 0.5
 	SliceMaterials.add_box(self, body, Vector3(cx_w, -dt * 0.5, 0), Vector3(len_w, dt, cw), &"bridge_deck")
 	SliceMaterials.add_box(self, null, Vector3(cx_w, -dt - 2.2, 0), Vector3(len_w, 4.0, cw - 0.8), &"structure", false)
-	# Far continuation truss beam across the east half of the shaft (+7 .. +R) for 175s symmetry.
-	var len_e := R - 7.0
-	var cx_e := 7.0 + len_e * 0.5
+	# Floor 77 East boarding threshold (+7.0 .. +9.34) directly feeding the 41 km EL-DEEP-00 bay
+	# at x in [9.4, 13.6], z in [-1.1, +3.1], plus east continuation truss (+13.8 .. +R) for 175s symmetry.
+	SliceMaterials.add_box(self, body, Vector3(8.17, -dt * 0.5, 0.0), Vector3(2.34, dt, cw), &"bridge_deck")
+	SliceMaterials.add_box(self, null, Vector3(8.17, -dt - 2.2, 0.0), Vector3(2.20, 4.0, cw - 0.8), &"structure", false)
+	var len_e := R - 13.8
+	var cx_e := 13.8 + len_e * 0.5
 	SliceMaterials.add_box(self, body, Vector3(cx_e, -dt * 0.5, 0), Vector3(len_e, dt, cw), &"bridge_deck")
 	SliceMaterials.add_box(self, null, Vector3(cx_e, -dt - 2.2, 0), Vector3(len_e, 4.0, cw - 0.8), &"structure", false)
 
@@ -178,14 +183,22 @@ func _build_catwalk(body: StaticBody3D, entry_x: float, R: float) -> void:
 	for s: float in [-1.0, 1.0]:
 		var zr: float = s * (cw * 0.5 - 0.1)
 		SliceMaterials.add_collision_box(body, Vector3(cx_w, 0.58, zr), Vector3(len_w, 1.15, 0.1))
+		SliceMaterials.add_collision_box(body, Vector3(8.17, 0.58, zr), Vector3(2.34, 1.15, 0.1))
 		SliceMaterials.add_collision_box(body, Vector3(cx_e, 0.58, zr), Vector3(len_e, 1.15, 0.1))
 		rails.append({ "c": Vector3(cx_w, 1.11, zr), "s": Vector3(len_w, 0.07, 0.07) })
+		rails.append({ "c": Vector3(8.17, 1.11, zr), "s": Vector3(2.34, 0.07, 0.07) })
 		rails.append({ "c": Vector3(cx_e, 1.11, zr), "s": Vector3(len_e, 0.07, 0.07) })
 		var px := entry_x + 2.0
 		while px < R - 2.0:
-			if absf(px) > 7.2:
+			if px < -7.2 or px > 14.2:
 				posts.append({ "c": Vector3(px, 0.535, zr), "s": Vector3(0.06, 1.07, 0.06) })
 			px += 3.0
+	# Short north-side safety barrier at x = 9.30 beside the EL-DEEP-00 boarding opening (z in [-3.0, -1.2])
+	# plus west-facing end rail on the east continuation truss (x = 13.9).
+	SliceMaterials.add_collision_box(body, Vector3(9.30, 0.58, -2.1), Vector3(0.1, 1.15, 1.8))
+	rails.append({ "c": Vector3(9.30, 1.11, -2.1), "s": Vector3(0.07, 0.07, 1.8) })
+	SliceMaterials.add_collision_box(body, Vector3(13.9, 0.58, 0.0), Vector3(0.15, 1.15, cw))
+	rails.append({ "c": Vector3(13.9, 1.11, 0.0), "s": Vector3(0.07, 0.07, cw) })
 	# Hub railings (north full, south opens at x in [-1.6, 1.6] for the service lift cage, west/east open for catwalk).
 	SliceMaterials.add_collision_box(body, Vector3(0, 0.58, -6.9), Vector3(14.0, 1.15, 0.1))
 	rails.append({ "c": Vector3(0, 1.11, -6.9), "s": Vector3(14.0, 0.07, 0.07) })
@@ -219,12 +232,16 @@ func _build_catwalk(body: StaticBody3D, entry_x: float, R: float) -> void:
 	SliceMaterials.add_multimesh(self, heads, &"lamp")
 	SliceMaterials.add_coronas(self, glows, 2.0, &"corona_soft")
 
-	# Hub signboard on dark steel backing + canon readable plaque about Asset 31.
-	SliceMaterials.add_box(self, null, Vector3(-3.0, 1.85, -6.9), Vector3(0.08, 1.5, 0.08), &"structure", false)
-	SliceMaterials.add_box(self, null, Vector3(3.0, 1.85, -6.9), Vector3(0.08, 1.5, 0.08), &"structure", false)
-	SliceMaterials.add_box(self, null, Vector3(0.0, 2.35, -6.9), Vector3(6.4, 0.72, 0.10), &"structure", false)
+	# Hub signboard on dark steel backing (posts sit slightly behind backing plate so zero face overlap).
+	SliceMaterials.add_box(self, null, Vector3(-3.0, 1.85, -6.96), Vector3(0.08, 1.5, 0.08), &"structure", false)
+	SliceMaterials.add_box(self, null, Vector3(3.0, 1.85, -6.96), Vector3(0.08, 1.5, 0.08), &"structure", false)
+	SliceMaterials.add_box(self, null, Vector3(0.0, 2.35, -6.88), Vector3(6.4, 0.72, 0.10), &"structure", false)
 	SliceMaterials.add_sign(self, Vector3(0, 2.35, -6.82),
 		"MINING SHAFT 77-N  ·  DEPTH TO SURFACE: 41.0 KM", 0.0085, Color(1.0, 0.84, 0.54), 0.0)
+	# Sacred Continuum emblem mounted on the shaft hub bulkhead (honoring the 41 km vertical axis).
+	var sh_emb := ContinuumEmblem.create(0.75, &"copper", &"structure", false)
+	sh_emb.position = Vector3(-4.2, 2.55, -6.78)
+	add_child(sh_emb)
 	SliceMaterials.add_box(self, null, Vector3(0.0, 2.35, 6.80), Vector3(5.4, 0.62, 0.10), &"structure", false)
 	SliceMaterials.add_sign(self, Vector3(0, 2.35, 6.72),
 		"SERVICE CAGE  ↓  UNDERCROFT 76-B (-220 M)", 0.0072, Color(1.0, 0.85, 0.55), PI)
@@ -288,8 +305,8 @@ func _build_lower_undercroft(body: StaticBody3D, _R: float) -> void:
 	SliceMaterials.add_collision_box(body, Vector3(8.9, y0 + 0.58, 5.1), Vector3(0.1, 1.15, 3.8))
 	rails.append({ "c": Vector3(8.9, y0 + 1.11, -3.1), "s": Vector3(0.07, 0.07, 3.8) })
 	rails.append({ "c": Vector3(8.9, y0 + 1.11, 5.1), "s": Vector3(0.07, 0.07, 3.8) })
-	# Steel boarding threshold bridging Undercroft (+9.0) to DeepRelayLift west edge (+9.4).
-	SliceMaterials.add_box(self, body, Vector3(9.2, y0 - 0.15, 1.0), Vector3(0.55, 0.30, 4.4), &"bridge_deck")
+	# Steel boarding threshold bridging Undercroft (+9.0) cleanly to DeepRelayLift west edge (+9.34).
+	SliceMaterials.add_box(self, body, Vector3(9.17, y0 - 0.15, 1.0), Vector3(0.34, 0.30, 4.4), &"bridge_deck")
 	SliceMaterials.add_multimesh(self, rails, &"rail_glow")
 	# Warm undercroft overhead canopy frame + lamps + reward loot cache + relay log.
 	for sx in [-7.5, 7.5]:

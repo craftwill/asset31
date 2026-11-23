@@ -78,13 +78,25 @@ func _build_shell() -> void:
 			_wall_piece(shell, body, along_x, normal_c, 0.0, ow, oh, y1, t, wall_mat())
 			_wall_piece(shell, body, along_x, normal_c, 0.0, ow, y0, -slab, t, wall_mat())
 			_wall_piece(shell, body, along_x, normal_c, 0.0, ow, -slab, 0.0, t, &"ground")
+			_build_exterior_relief(shell, along_x, sgn, normal_c, span, ow, oh, y0, y1, t)
 		else:
 			_wall_piece(shell, body, along_x, normal_c, 0.0, span, y0, y1, t, wall_mat())
 
-	# Structural pillars, floor to ceiling.
+	# Structural pillars, floor to ceiling (skip sites that supply their own architecture, e.g. Preserve/Hydroponics).
 	var ps := float(def.pillars.size)
+	var no_pillar_rects: Array[Rect2] = []
+	for s: Dictionary in def.get("sites", []):
+		if bool(s.get("no_pillars", false)):
+			var r: Array = s.rect
+			no_pillar_rects.append(Rect2(float(r[0]) - ps, float(r[1]) - ps, (float(r[2]) - float(r[0])) + ps * 2.0, (float(r[3]) - float(r[1])) + ps * 2.0))
 	for p: Vector2 in CityLayout.pillar_positions(def):
-		SliceMaterials.add_box(shell, body, Vector3(p.x, h * 0.5, p.y), Vector3(ps, h, ps), &"structure")
+		var blocked := false
+		for nr: Rect2 in no_pillar_rects:
+			if nr.has_point(p):
+				blocked = true
+				break
+		if not blocked:
+			SliceMaterials.add_box(shell, body, Vector3(p.x, h * 0.5, p.y), Vector3(ps, h, ps), &"structure")
 
 
 func _wall_piece(parent: Node3D, body: StaticBody3D, along_x: bool, normal_c: float, u_c: float, u_len: float, ya: float, yb: float, t: float, mat: StringName) -> void:
@@ -97,6 +109,50 @@ func _wall_piece(parent: Node3D, body: StaticBody3D, along_x: bool, normal_c: fl
 		c = Vector3(normal_c, (ya + yb) * 0.5, u_c)
 		s = Vector3(t, yb - ya, u_len)
 	SliceMaterials.add_box(parent, body, c, s, mat)
+
+
+## Monumental 3D exterior architectural relief on the opposing Twin-Stack walls
+## (STK-0412 +X face and STK-0413 -X face): heavy vertical structural buttresses,
+## 900 m horizontal mechanical service ledges, and portal flank pylons. Preserves
+## the exact 3 km gap & gate geometry while replacing flat planes with 3D cliff depth.
+func _build_exterior_relief(parent: Node3D, along_x: bool, sgn: float, normal_c: float, span: float, ow: float, oh: float, y0: float, y1: float, t: float) -> void:
+	if along_x:
+		return
+	var outer_x := normal_c + sgn * (t * 0.5)
+	var steel: Array = []
+	var beacons: Array = []
+	var h_total := y1 - y0
+	var cy := (y0 + y1) * 0.5
+	# Twin monumental portal flank buttresses framing the 600 x 420 m gate opening.
+	for ps: float in [-1.0, 1.0]:
+		var pz := ps * (ow * 0.5 + 22.0)
+		steel.append({ "c": Vector3(outer_x + sgn * 16.0, cy, pz), "s": Vector3(32.0, h_total, 36.0) })
+		beacons.append({ "c": Vector3(outer_x + sgn * 33.0, oh + 36.0, pz), "s": Vector3(3.2, 3.2, 3.2) })
+	# Heavy exterior lintel header & upper structural brow truss spanning the 600 m opening (recessed inside buttress outer faces).
+	steel.append({ "c": Vector3(outer_x + sgn * 16.0, oh + 18.0, 0.0), "s": Vector3(28.0, 32.0, ow + 74.0) })
+	steel.append({ "c": Vector3(outer_x + sgn * 12.0, oh + 220.0, 0.0), "s": Vector3(20.0, 26.0, ow + 74.0) })
+	# Repeating vertical structural buttress fins across the 6 km opposing cliff face.
+	var half_span := span * 0.5 - 120.0
+	var bz := -half_span
+	while bz <= half_span:
+		if absf(bz) > ow * 0.5 + 160.0:
+			steel.append({ "c": Vector3(outer_x + sgn * 13.0, cy, bz), "s": Vector3(26.0, h_total, 24.0) })
+			beacons.append({ "c": Vector3(outer_x + sgn * 27.0, 420.0, bz), "s": Vector3(2.8, 2.8, 2.8) })
+		bz += 520.0
+	# Horizontal 900 m mechanical/ventilation service ledges matching the facade floor bands (offset +1.5 m from vertical fin back-plane).
+	var ly := -4500.0
+	while ly <= 5400.0:
+		var in_gate := ly >= -60.0 and ly <= oh + 40.0
+		if in_gate:
+			var wing_len := half_span - (ow * 0.5 + 40.0)
+			var wing_c := ow * 0.5 + 40.0 + wing_len * 0.5
+			for ps: float in [-1.0, 1.0]:
+				steel.append({ "c": Vector3(outer_x + sgn * 11.5, ly, ps * wing_c), "s": Vector3(20.0, 36.0, wing_len) })
+		else:
+			steel.append({ "c": Vector3(outer_x + sgn * 11.5, ly, 0.0), "s": Vector3(20.0, 36.0, span - 80.0) })
+		ly += 900.0
+	SliceMaterials.add_multimesh(parent, steel, &"structure")
+	SliceMaterials.add_multimesh(parent, beacons, &"beacon_red")
 
 
 func _build_city() -> void:
@@ -143,7 +199,9 @@ func _build_city() -> void:
 		if not lamps.has(key):
 			lamps[key] = []
 		lamps[key].append(p)
-	SliceMaterials.add_multimesh(city, poles, &"structure_fade_far", 1900.0)
+	# Per-pixel shader dither-fade handles distant poles; omit MultiMesh visibility_range_end
+	# because a 6 km MultiMesh's AABB center is at x=0 and would cull poles near stack edges.
+	SliceMaterials.add_multimesh(city, poles, &"structure_fade_far")
 	SliceMaterials.add_multimesh(city, heads, &"lamp")
 	var glow: Array = []
 	for hd: Dictionary in heads:
@@ -209,11 +267,13 @@ func _build_sites() -> void:
 		match String(site.kind):
 			"home": node = HomeSite.build(self, site)
 			"market": node = MarketSite.build(self, site)
+			"highway": node = HighwaySite.build(self, site)
 			"foundry": node = FoundrySite.build(self, site)
 			"gate_departure", "gate_arrival": node = GateSite.build(self, site)
 			"pipes": node = FoundrySite.build_pipes(self, site)
 			"hydroponics": node = HydroponicSite.build(self, site)
 			"preserve": node = PreserveSite.build(self, site)
+			"glass_terrace": node = GlassTerraceSite.build(self, site)
 			_: push_error("Unknown site kind %s" % site.kind)
 		if node != null:
 			node.name = site.id

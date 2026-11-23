@@ -62,8 +62,8 @@ func _build_car() -> void:
 	for wx: float in [-1.8, 1.8]:
 		for wz: float in [-0.7, 0.7]:
 			SliceMaterials.add_box(car, null, Vector3(wx, -0.58, wz), Vector3(0.55, 0.36, 0.14), &"structure", false)
-	# Low guard rails (south + east + west closed; north side opens onto bridge boarding lip).
-	SliceMaterials.add_box(car, car, Vector3(0, 0.55, HALF_W - 0.06), Vector3(HALF_LEN * 2.0, 1.1, 0.12), &"structure")
+	# Low guard rails (south + east + west closed; trimmed corners prevent coplanar z-fighting).
+	SliceMaterials.add_box(car, car, Vector3(0, 0.55, HALF_W - 0.06), Vector3(HALF_LEN * 2.0 - 0.26, 1.1, 0.12), &"structure")
 	SliceMaterials.add_box(car, car, Vector3(-HALF_LEN + 0.06, 0.55, 0), Vector3(0.12, 1.1, HALF_W * 2.0), &"structure")
 	SliceMaterials.add_box(car, car, Vector3(HALF_LEN - 0.06, 0.55, 0), Vector3(0.12, 1.1, HALF_W * 2.0), &"structure")
 	# Overhead open steel frame & cab canopy + corner stanchions.
@@ -100,7 +100,7 @@ func _build_car() -> void:
 	console.station_side = 0
 	console.position = Vector3(0, 0.72, HALF_W - 0.36)
 	car.add_child(console)
-	SliceMaterials.add_box(console, console, Vector3.ZERO, Vector3(0.75, 1.15, 0.46), &"plate")
+	SliceMaterials.add_box(console, console, Vector3.ZERO, Vector3(0.75, 1.15, 0.46), &"plate_local")
 	SliceMaterials.add_box(console, null, Vector3(0, 0.34, -0.24), Vector3(0.42, 0.18, 0.04), &"window_glow", false)
 
 	_motor = _make_audio("res://audio/tram_hum.wav", true, -8.0)

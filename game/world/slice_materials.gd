@@ -12,15 +12,24 @@ const CORONA := preload("res://shaders/corona.gdshader")
 const TUBE := preload("res://shaders/tube_light.gdshader")
 const MOLTEN := preload("res://shaders/molten.gdshader")
 const GLASS := preload("res://shaders/glass.gdshader")
+const CURTAIN_WALL := preload("res://shaders/curtain_wall.gdshader")
 const FIGURE := preload("res://shaders/figure.gdshader")
 
 const WARM := Color(1.0, 0.62, 0.32)
 const COOL := Color(0.78, 0.88, 1.0)
 
+# Named vertical & trim elevation tiers to prevent coplanar z-fighting across authored sites.
+const Z_FLOOR_TOP := 0.0
+const Z_DECK_TOP := 0.03
+const Z_MARKING_TOP := 0.046
+const Z_CONDUIT_TOP := 0.075
+const Z_CORNER_INSET := 0.02
+
 static var _cache: Dictionary = {}
 static var _unit_box: BoxMesh
 static var _quad: QuadMesh
 static var _cyl: Dictionary = {}
+static var record_lint := false
 
 
 static func unit_box() -> BoxMesh:
@@ -97,6 +106,9 @@ static func get_mat(id: StringName) -> Material:
 		&"stack_wall":
 			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 2.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
 				"no_snap": 1.0, "floor_bands": 1.0, "interior_enabled": 0.0 }))
+		&"shaft_wall":
+			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 2.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
+				"no_snap": 1.0, "floor_bands": 1.0, "interior_enabled": 0.0, "world_y": 1.0 }))
 		&"stack_wall_cool":
 			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 1.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
 				"window_color": Color(0.85, 0.9, 1.0), "tint": Color(0.8, 0.85, 0.95),
@@ -143,12 +155,18 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(SURFACE, _surface(&"fabric", 1.2, { "tint": Color(0.20, 0.68, 0.16), "roughness_val": 0.94, "specular_val": 0.06 }))
 		&"preserve_wall":
 			m = _make(SURFACE, _surface(&"panel", 6.0, { "use_world": 1.0, "tint": Color(0.92, 0.88, 0.78), "roughness_val": 0.90, "specular_val": 0.08, "no_snap": 1.0 }))
+		&"terrace_concrete":
+			m = _make(SURFACE, _surface(&"concrete", 6.0, { "use_world": 1.0, "tint": Color(1.38, 1.42, 1.38), "roughness_val": 0.88, "specular_val": 0.10, "no_snap": 1.0 }))
+		&"terrace_tower":
+			m = _make(FACADE, _facade({ "use_world": 1.0, "style_override": 1.0, "tint": Color(1.35, 1.40, 1.36), "lit_fraction": 0.02, "window_color": Color(0.82, 0.88, 0.86), "glass_color": Color(0.22, 0.25, 0.24), "frame_color": Color(0.55, 0.58, 0.56), "no_snap": 1.0, "interior_enabled": 0.0 }))
 		&"tree_trunk":
 			m = _make(SURFACE, _surface(&"wood", 1.2, { "tint": Color(0.32, 0.22, 0.14), "roughness_val": 0.95 }))
 		&"deer_coat":
 			m = _make(SURFACE, _surface(&"fabric", 1.0, { "tint": Color(0.76, 0.50, 0.32), "roughness_val": 0.92 }))
 		&"plate":
 			m = _make(SURFACE, _surface(&"plate", 0.9, { "use_world": 1.0, "roughness_val": 0.7, "specular_val": 0.25, "tint": Color(0.8, 0.78, 0.76) }))
+		&"plate_local":
+			m = _make(SURFACE, _surface(&"plate", 0.9, { "use_world": 0.0, "roughness_val": 0.7, "specular_val": 0.25, "tint": Color(0.8, 0.78, 0.76) }))
 		&"wood":
 			m = _make(SURFACE, _surface(&"wood", 1.2))
 		&"wood_dark":
@@ -204,6 +222,10 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(EMISSIVE, { "color": Color(0.45, 0.8, 1.0), "energy": 2.4 })
 		&"sign_yellow":
 			m = _make(EMISSIVE, { "color": Color(1.0, 0.85, 0.4), "energy": 2.4 })
+		&"sign_board_lit":
+			m = _make(EMISSIVE, { "color": Color(0.78, 0.80, 0.76), "energy": 0.98 })
+		&"gallery_strip":
+			m = _make(EMISSIVE, { "color": Color(0.95, 0.80, 0.60), "energy": 1.15 })
 		&"beacon_red":
 			m = _make(EMISSIVE, { "color": Color(1.0, 0.15, 0.1), "energy": 5.0 })
 		&"grow_magenta":
@@ -240,6 +262,8 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(MOLTEN, { "flow": 0.3, "energy": 2.2 })
 		&"glass":
 			m = _make(GLASS, {})
+		&"curtain_wall":
+			m = _make(CURTAIN_WALL, {})
 		&"figure":
 			m = _make(FIGURE, {})
 		_:
@@ -321,6 +345,8 @@ static func add_multimesh(parent: Node3D, items: Array, mat_id: StringName, vis_
 	if vis_end > 0.0:
 		mmi.visibility_range_end = vis_end
 		mmi.visibility_range_end_margin = 250.0
+	if record_lint and mesh == null and items.size() <= 600:
+		mmi.set_meta(&"lint_items", items)
 	parent.add_child(mmi)
 	return mmi
 

@@ -7,6 +7,7 @@ signal container_activated(container: LootContainer)
 signal note_activated(note: ReadableNote)
 signal tram_console_activated(console: TramConsole)
 signal relay_console_activated(console: RelayConsole)
+signal express_console_activated(console: ExpressConsole)
 
 const REACH := 3.0
 
@@ -35,7 +36,7 @@ func _physics_process(_delta: float) -> void:
 	var found: Node = null
 	if not hit.is_empty():
 		var col: Object = hit.collider
-		if col is LootContainer or col is ReadableNote or col is TramConsole or col is RelayConsole:
+		if col is LootContainer or col is ReadableNote or col is TramConsole or col is RelayConsole or col is ExpressConsole:
 			found = col as Node
 	if found != current_target:
 		current_target = found
@@ -47,12 +48,16 @@ func _physics_process(_delta: float) -> void:
 			prompt_changed.emit((found as TramConsole).prompt_text())
 		elif found is RelayConsole:
 			prompt_changed.emit((found as RelayConsole).prompt_text())
+		elif found is ExpressConsole:
+			prompt_changed.emit((found as ExpressConsole).prompt_text())
 		else:
 			prompt_changed.emit("")
 	elif found is TramConsole:
 		prompt_changed.emit((found as TramConsole).prompt_text())
 	elif found is RelayConsole:
 		prompt_changed.emit((found as RelayConsole).prompt_text())
+	elif found is ExpressConsole:
+		prompt_changed.emit((found as ExpressConsole).prompt_text())
 
 
 func try_interact() -> bool:
@@ -71,5 +76,8 @@ func try_interact() -> bool:
 		return true
 	if current_target is RelayConsole:
 		relay_console_activated.emit(current_target as RelayConsole)
+		return true
+	if current_target is ExpressConsole:
+		express_console_activated.emit(current_target as ExpressConsole)
 		return true
 	return false

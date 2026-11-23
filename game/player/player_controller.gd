@@ -29,6 +29,7 @@ var work_lamp: SpotLight3D
 var autopilot_dir := Vector3.ZERO
 var speed_override := 0.0
 var input_enabled := true
+var riding_transport := false
 
 var _pitch := 0.0
 var _shape: CapsuleShape3D
@@ -59,7 +60,7 @@ func _ready() -> void:
 	add_child(head)
 	camera = Camera3D.new()
 	camera.near = 0.12
-	camera.far = 30000.0
+	camera.far = 48000.0
 	camera.fov = 74.0
 	head.add_child(camera)
 	camera.current = true
@@ -106,6 +107,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if riding_transport:
+		velocity = Vector3.ZERO
+		_update_head(delta, 0.0)
+		reset_fall_tracking()
+		return
 	var wish := Vector3.ZERO
 	var sprinting := false
 	if autopilot_dir != Vector3.ZERO:
@@ -197,6 +203,13 @@ func _track_falls(delta: float) -> void:
 
 func _on_origin_shifted(delta: Vector3) -> void:
 	_air_top_y -= delta.y
+
+
+## Called by high-speed vertical transports (e.g. 41 km DeepRelayLift) while the
+## player is carried inside the cage so extreme vertical drops never trigger a false fall.
+func reset_fall_tracking() -> void:
+	_air_top_y = position.y
+	_was_on_floor = true
 
 
 func _footsteps(delta: float) -> void:

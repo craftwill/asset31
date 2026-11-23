@@ -43,6 +43,7 @@ uniform float fade_start = 0.0;
 uniform float fade_end = 0.0;
 uniform float floor_bands = 0.0;
 uniform float interior_enabled = 1.0;
+uniform float world_y = 0.0;
 
 varying vec3 v_pos;
 varying vec3 v_nrm;
@@ -68,8 +69,11 @@ void vertex() {
 		v_ray = ray_r;
 	} else {
 		v_pos = VERTEX * sc;
+		if (world_y > 0.5) {
+			v_pos.y = wpos.y;
+		}
 		v_nrm = NORMAL;
-		v_base = -0.5 * sc.y + base_sink;
+		v_base = (world_y > 0.5) ? world_floor_y : (-0.5 * sc.y + base_sink);
 		vec3 ax = normalize(MODEL_MATRIX[0].xyz);
 		vec3 ay = normalize(MODEL_MATRIX[1].xyz);
 		vec3 az = normalize(MODEL_MATRIX[2].xyz);

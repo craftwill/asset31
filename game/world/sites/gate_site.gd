@@ -46,22 +46,39 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var corona_mat := &"corona_cool" if _cool else &"corona"
 	var lcol := SliceMaterials.COOL if _cool else SliceMaterials.WARM
 
-	# Plaza floor and the hazard band at the drop edge (with opening for Mining Shaft 77-N on departure north side).
+	# Plaza floor, freight bay staging lane stripes & service conduit covers (non-overlapping heights),
+	# plus the hazard band at the drop edge (with opening for Mining Shaft 77-N on departure north side).
 	_gb(Vector3(0, -0.1, -ow + 10), Vector3(240, 0.03, ow - 10), &"concrete_floor")
+	var plaza_strips: Array = []
+	var conduit_covers: Array = []
+	for side: float in [-1.0, 1.0]:
+		# Restrained lane guide stripes framing the central bridge approach corridor (z = ±11.5 m).
+		plaza_strips.append({ "c": g(110.0, 0.038, side * 11.5), "s": Vector3(210.0, 0.016, 0.32) })
+		# Low steel service conduit trenches flanking the freight apron (z = ±22 m, outside autopilot path).
+		conduit_covers.append({ "c": g(116.0, 0.055, side * 22.0), "s": Vector3(204.0, 0.04, 0.9) })
+	# Transverse freight staging bay markings across the inner apron (x' = 45..205 m).
+	var bx := 45.0
+	while bx <= 205.0:
+		for side: float in [-1.0, 1.0]:
+			plaza_strips.append({ "c": g(bx, 0.038, side * 44.0), "s": Vector3(0.35, 0.016, 34.0) })
+		bx += 32.0
+	SliceMaterials.add_multimesh(self, plaza_strips, &"rail_steel")
+	SliceMaterials.add_multimesh(self, conduit_covers, &"structure")
 	if not _cool:
 		_gb(Vector3(-_wall + 0.5, -0.05, -ow), Vector3(-_wall + 2.5, 0.05, -183.0), &"hazard")
 		_gb(Vector3(-_wall + 0.5, -0.05, -177.0), Vector3(-_wall + 2.5, 0.05, -bridge_half), &"hazard")
 	else:
-		_gb(Vector3(-_wall + 0.5, -0.05, -ow), Vector3(-_wall + 2.5, 0.05, -bridge_half), &"hazard")
+		_gb(Vector3(-_wall + 0.5, -0.05, -ow), Vector3(-_wall + 2.5, 0.05, -253.0), &"hazard")
+		_gb(Vector3(-_wall + 0.5, -0.05, -247.0), Vector3(-_wall + 2.5, 0.05, -bridge_half), &"hazard")
 	_gb(Vector3(-_wall + 0.5, -0.05, bridge_half), Vector3(-_wall + 2.5, 0.05, ow), &"hazard")
 
-	# Edge railing with a glowing handrail (frame 125s), open at the bridge and Mining Shaft 77-N spur.
+	# Edge railing with a glowing handrail (frame 125s), open at the bridge, Mining Shaft 77-N spur, and STA-0413-N Express spur.
 	var posts: Array = []
 	var rail_spans: Array = []
 	if not _cool:
 		rail_spans = [[-ow, -183.0], [-177.0, -bridge_half], [bridge_half, ow]]
 	else:
-		rail_spans = [[-ow, -bridge_half], [bridge_half, ow]]
+		rail_spans = [[-ow, -253.0], [-247.0, -bridge_half], [bridge_half, ow]]
 	for sp: Array in rail_spans:
 		var z0: float = sp[0]
 		var z1: float = sp[1]
@@ -82,6 +99,14 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 		var sh_l := SliceMaterials.make_lamp_light(SliceMaterials.WARM, 1.5, 16.0)
 		sh_l.position = g(-32.0, 3.4, -180.0)
 		add_child(sh_l)
+	else:
+		# Arrival-side signpost marking the walkable catwalk spur out to STA-0413-N Inter-Stack Express (EXP-077).
+		_gb(Vector3(-30.1, 0, -254.5), Vector3(-29.9, 3.3, -254.3), &"structure", _body)
+		_gb(Vector3(-30.15, 2.2, -255.8), Vector3(-29.85, 3.1, -253.0), &"structure")
+		SliceMaterials.add_sign(self, g(-29.8, 2.65, -254.4), "← EXP-077 EXPRESS\nSTA-0413-N · STK-0414", 0.0085, Color(0.84, 0.94, 1.0), -_sx * PI * 0.5)
+		var ex_l := SliceMaterials.make_lamp_light(SliceMaterials.COOL, 1.6, 18.0)
+		ex_l.position = g(-32.0, 3.4, -250.0)
+		add_child(ex_l)
 
 	# Gate frame: heavy beams in front of the opening edges and lintel.
 	_gb(Vector3(0, 0, -ow), Vector3(12, oh + 12, -ow + 12), &"structure_world", _body)
@@ -90,6 +115,13 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var sign_rot := -_sx * PI * 0.5
 	var big_text := "BR-077-A  ·  STK-0413  ·  3.0 KM" if not _cool else "STK-0413  ·  FLOOR 77  ·  WEST ARRIVAL"
 	SliceMaterials.add_sign(self, g(12.2, oh - 2.0, 0), big_text, 0.4, Color(1.0, 0.82, 0.5) if not _cool else Color(0.8, 0.9, 1.0), sign_rot)
+	# Sacred Continuum architectural emblem mounted on both flanks of the monumental gate lintel
+	# (honoring the unbroken 3 km bond between STK-0412 and STK-0413).
+	for e_side: float in [-1.0, 1.0]:
+		var g_emb := ContinuumEmblem.create(3.6, &"copper", &"structure", false)
+		g_emb.position = g(12.6, 18.0, e_side * (ow - 6.0))
+		g_emb.rotation.y = sign_rot
+		add_child(g_emb)
 
 	# Human-scale route signs at the bridge head, with localized sign lighting.
 	var sign_glows: Array = []
@@ -146,8 +178,8 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	SliceMaterials.add_coronas(self, heads, 7.0, corona_mat)
 
 	# Enterable shelter booth: open doorway on the plaza-facing wall (x' = 20, z = -45.5..-44.1),
-	# riveted plate walls, wood floor, bench, warm interior lamp, and persistent supply cache inside.
-	_gb(Vector3(20.1, -0.08, -47.9), Vector3(27.9, 0.04, -40.1), &"floor_wood", _metal)
+	# riveted plate walls, wood floor (y = 0.07 above plaza 0.03), bench, warm interior lamp, and persistent supply cache inside.
+	_gb(Vector3(20.1, -0.05, -47.9), Vector3(27.9, 0.07, -40.1), &"floor_wood", _metal)
 	_gb(Vector3(19.6, 3.0, -48.4), Vector3(28.4, 3.25, -39.6), &"structure", _body)
 	# Back (x'=28), north (z=-48), south (z=-40) walls.
 	_gb(Vector3(27.7, 0.0, -48.0), Vector3(28.0, 3.0, -40.0), &"plate", _metal)
@@ -241,3 +273,17 @@ func _arrival_extras(ow: float, oh: float) -> void:
 	# Arrival checkpoint service kiosk beside the west arrival shelter.
 	_gb(Vector3(19.2, 0.03, -36.8), Vector3(20.1, 2.2, -35.6), &"container_grey", _body)
 	_gb(Vector3(19.16, 1.25, -36.55), Vector3(19.2, 1.75, -35.85), &"sign_cyan")
+	# Diegetic directional signpost guiding explorers south to the Misty Glass Observation Terrace (400s).
+	_gb(Vector3(145.0, 0.0, 96.0), Vector3(145.3, 3.6, 96.3), &"structure", _body)
+	_gb(Vector3(144.95, 2.5, 93.8), Vector3(145.35, 3.5, 98.4), &"structure")
+	SliceMaterials.add_sign(self, g(144.9, 3.0, 96.1), "GLASS CURTAIN SECTOR 413-S\nOBSERVATION TERRACE  ↓", 0.0085, Color(0.84, 0.94, 1.0), -_sx * PI * 0.5)
+	var tl := SliceMaterials.make_lamp_light(SliceMaterials.COOL, 1.3, 12.0)
+	tl.position = g(144.2, 3.3, 96.1)
+	add_child(tl)
+	# Matching north-bound directional signpost guiding explorers toward Hydroponics, Preserve & EXP-077 Express.
+	_gb(Vector3(145.0, 0.0, -96.0), Vector3(145.3, 3.6, -96.3), &"structure", _body)
+	_gb(Vector3(144.95, 2.5, -98.4), Vector3(145.35, 3.5, -93.8), &"structure")
+	SliceMaterials.add_sign(self, g(144.9, 3.0, -96.1), "↑ HYDROPONIC BAY  ·  PRESERVE 413-B\nEXP-077 INTER-STACK EXPRESS (NORTH)", 0.0082, Color(0.84, 0.94, 1.0), -_sx * PI * 0.5)
+	var nl := SliceMaterials.make_lamp_light(SliceMaterials.COOL, 1.3, 12.0)
+	nl.position = g(144.2, 3.3, -96.1)
+	add_child(nl)

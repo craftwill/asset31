@@ -112,11 +112,32 @@ func set_mood(mood: String, delta: float, instant := false) -> void:
 	var tgt_amb_e := 0.75
 	var tgt_fog_d := 0.00022
 	if mood == "preserve":
-		tgt_bg = Color(0.56, 0.55, 0.48)
-		tgt_fog = Color(0.64, 0.62, 0.54)
-		tgt_amb = Color(0.74, 0.74, 0.68)
+		tgt_bg = Color(0.76, 0.74, 0.64)
+		tgt_fog = Color(0.78, 0.76, 0.66)
+		tgt_amb = Color(0.84, 0.84, 0.76)
+		tgt_amb_e = 1.20
+		tgt_fog_d = 0.00052
+		floor_logical_y = 41000.0
+	elif mood == "hydroponics":
+		tgt_bg = Color(0.22, 0.11, 0.19)
+		tgt_fog = Color(0.32, 0.16, 0.27)
+		tgt_amb = Color(0.48, 0.30, 0.42)
+		tgt_amb_e = 0.95
+		tgt_fog_d = 0.0022
+		floor_logical_y = 41000.0
+	elif mood == "glass_terrace":
+		tgt_bg = Color(0.54, 0.56, 0.53)
+		tgt_fog = Color(0.62, 0.64, 0.60)
+		tgt_amb = Color(0.68, 0.70, 0.66)
 		tgt_amb_e = 1.05
-		tgt_fog_d = 0.0014
+		tgt_fog_d = 0.00055
+		floor_logical_y = 41000.0
+	elif mood == "gap":
+		tgt_bg = Color(0.092, 0.056, 0.034)
+		tgt_fog = Color(0.195, 0.115, 0.060)
+		tgt_amb = Color(0.32, 0.22, 0.15)
+		tgt_amb_e = 0.75
+		tgt_fog_d = 0.000135
 		floor_logical_y = 41000.0
 	elif mood == "crust":
 		tgt_bg = Color(0.065, 0.038, 0.025)

@@ -32,6 +32,7 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var stall_wood: Array = []
 	var stall_crates: Array = []
 	var stall_poles: Array = []
+	var sign_brackets: Array = []
 	# Shop rows between side streets (block boundaries every 62.5 m).
 	var k := ceili((x0 + hw) / BLOCK)
 	while -hw + k * BLOCK + BLOCK <= x1 + 0.01:
@@ -81,18 +82,26 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 					if not awnings.has(cmat):
 						awnings[cmat] = []
 					awnings[cmat].append({ "c": Vector3(sx, 2.4, sz_p), "s": Vector3(2.6, 0.07, 1.4), "r": Vector3(side * 0.12, 0.0, 0.0) })
-				# Some protruding signs.
+				# Some protruding signs with steel wall-mounting frames & twin support arms.
 				if rng.randf() < 0.35:
 					var mat: StringName = [&"sign_green", &"sign_magenta", &"sign_cyan", &"sign_yellow"][rng.randi() % 4]
 					if not signs.has(mat):
 						signs[mat] = []
 					var sy := rng.randf_range(6.0, 9.0)
-					signs[mat].append({ "c": Vector3(x + 1.0, sy, side * (STREET_HALF - 0.95)), "s": Vector3(0.25, 1.6, 1.7) })
+					var sx_s := x + 1.0
+					var sz_s: float = side * (STREET_HALF - 0.95)
+					signs[mat].append({ "c": Vector3(sx_s, sy, sz_s), "s": Vector3(0.25, 1.6, 1.7) })
+					# Steel backing spine & upper/lower wall struts bolted into the facade.
+					sign_brackets.append({ "c": Vector3(sx_s, sy, sz_s), "s": Vector3(0.18, 1.74, 1.82) })
+					sign_brackets.append({ "c": Vector3(sx_s, sy + 0.65, side * (STREET_HALF - 0.55)), "s": Vector3(0.10, 0.10, 1.25) })
+					sign_brackets.append({ "c": Vector3(sx_s, sy - 0.65, side * (STREET_HALF - 0.55)), "s": Vector3(0.10, 0.10, 1.25) })
 				x += w
 		k += 1
 	SliceMaterials.add_multimesh(self, shops, &"shopfront")
 	for mat: StringName in signs:
 		SliceMaterials.add_multimesh(self, signs[mat], mat)
+	if not sign_brackets.is_empty():
+		SliceMaterials.add_multimesh(self, sign_brackets, &"structure")
 	for amat: StringName in awnings:
 		SliceMaterials.add_multimesh(self, awnings[amat], amat)
 	if not stall_wood.is_empty():
@@ -176,7 +185,7 @@ func _build(stack: StackRuntime, site: Dictionary) -> void:
 	var ex := x1 - 4.0
 	for side in [-1.0, 1.0]:
 		SliceMaterials.add_box(self, body, Vector3(ex, 6.2, side * (STREET_HALF - 0.35)), Vector3(0.7, 12.4, 0.7), &"structure")
-	SliceMaterials.add_box(self, null, Vector3(ex, 12.4, 0.0), Vector3(0.8, 0.9, STREET_HALF * 2.0), &"structure", false)
+	SliceMaterials.add_box(self, null, Vector3(ex, 12.4, 0.0), Vector3(0.8, 0.9, STREET_HALF * 2.0 - 0.12), &"structure", false)
 	SliceMaterials.add_box(self, null, Vector3(ex, 11.8, 0.0), Vector3(0.9, 0.2, 0.9), &"lamp", false)
 	SliceMaterials.add_coronas(self, [Vector3(ex, 11.6, 0.0)], 2.2, &"corona_soft")
 	var el := SliceMaterials.make_lamp_light(SliceMaterials.WARM, 2.0, 24.0)

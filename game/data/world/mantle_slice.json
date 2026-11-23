@@ -24,6 +24,7 @@
       "sites": [
         { "id": "SITE-HOME", "kind": "home", "rect": [-1493, 69.5, -1444.5, 118] },
         { "id": "SITE-MARKET", "kind": "market", "rect": [-1900, -31.25, -1100, 31.25], "no_lamps": true },
+        { "id": "SITE-HIGHWAY-412", "kind": "highway", "rect": [-1100, -40, 1100, 40], "no_lamps": true },
         { "id": "SITE-PIPES-A", "kind": "pipes", "rect": [1100, -31, 1690, 31] },
         { "id": "SITE-FOUNDRY", "kind": "foundry", "rect": [1690, -70, 2110, 70], "no_lamps": true },
         { "id": "SITE-PIPES-B", "kind": "pipes", "rect": [2110, -31, 2740, 31] },
@@ -32,6 +33,7 @@
       "landmarks": [
         { "id": "LM-0412-GATE", "name": "East edge gate", "position": [3000, 0, 0] },
         { "id": "LM-0412-FOUNDRY", "name": "Foundry hall", "position": [1900, 0, 0] },
+        { "id": "LM-0412-HIGHWAY", "name": "Trunk Route 77-E", "position": [-420, 0, 0] },
         { "id": "LM-0412-MARKET", "name": "Market street", "position": [-1500, 0, 0] }
       ]
     },
@@ -53,13 +55,15 @@
       "districts": [],
       "sites": [
         { "id": "SITE-GATE-W", "kind": "gate_arrival", "rect": [-3000, -290, -2740, 290] },
-        { "id": "SITE-HYDRO-413", "kind": "hydroponics", "rect": [-2905, -220, -2750, -100], "no_lamps": true },
-        { "id": "SITE-PRESERVE-413", "kind": "preserve", "rect": [-2930, -440, -2725, -220], "no_lamps": true }
+        { "id": "SITE-HYDRO-413", "kind": "hydroponics", "rect": [-2940, -700, -2240, -100], "no_lamps": true, "no_pillars": true },
+        { "id": "SITE-PRESERVE-413", "kind": "preserve", "rect": [-2960, -1700, -2000, -700], "no_lamps": true, "no_pillars": true },
+        { "id": "SITE-GLASS-413", "kind": "glass_terrace", "rect": [-2740, 110, -2140, 430], "no_lamps": true, "no_pillars": true }
       ],
       "landmarks": [
         { "id": "LM-0413-GATE", "name": "West arrival gate", "position": [-3000, 0, 0] },
         { "id": "LM-0413-HYDRO", "name": "Hydroponic Bay 413-A", "position": [-2827, 0, -100] },
-        { "id": "LM-0413-PRESERVE", "name": "Ecological Preserve 413-B", "position": [-2827, 0, -330] }
+        { "id": "LM-0413-PRESERVE", "name": "Ecological Preserve 413-B", "position": [-2590, 0, -1200] },
+        { "id": "LM-0413-GLASS", "name": "Glass Curtain Terrace 413-S", "position": [-2560, 24, 148] }
       ]
     }
   ],
@@ -85,21 +89,32 @@
     { "id": "CRUST-00", "kind": "mining_surface", "position": [3260, 0, -180] },
     { "id": "EL-DEEP-00", "kind": "deep_relay", "position": [3271.5, 0, -179.0] },
     { "id": "EL-GAP-1", "kind": "elevator_shaft", "position": [4050, 41000, 720], "size": 30, "depth": 6000, "height": 4000, "cars": 3 },
-    { "id": "EL-GAP-2", "kind": "elevator_shaft", "position": [5250, 41000, -1150], "size": 30, "depth": 6000, "height": 4000, "cars": 2 }
+    { "id": "EL-GAP-2", "kind": "elevator_shaft", "position": [5250, 41000, -1150], "size": 30, "depth": 6000, "height": 4000, "cars": 2 },
+    { "id": "EL-GAP-3", "kind": "elevator_shaft", "position": [5350, 41000, -6800], "size": 34, "depth": 6000, "height": 4500, "cars": 3 },
+    { "id": "EL-GAP-4", "kind": "elevator_shaft", "position": [6750, 41000, -11200], "size": 34, "depth": 6000, "height": 4500, "cars": 2 },
+    { "id": "EXP-077", "kind": "inter_stack_express" },
+    { "id": "STK-0414", "kind": "distant_stack", "position": [6200, 41000, -17500], "width": 5600, "depth": 5600, "below_depth": 8000, "above_height": 8000, "palette": "cool", "silhouette": 0 },
+    { "id": "STK-0415", "kind": "distant_stack", "position": [4600, 41000, 18500], "width": 5400, "depth": 5400, "below_depth": 8000, "above_height": 7600, "palette": "warm", "silhouette": 1, "viaduct_dir": [0.05, -1.0], "viaduct_len": 5200 },
+    { "id": "STK-0416", "kind": "distant_stack", "position": [22800, 41000, -14200], "width": 5800, "depth": 5800, "below_depth": 7500, "above_height": 7500, "palette": "cool", "silhouette": 2 },
+    { "id": "STK-0417", "kind": "distant_stack", "position": [-14800, 41000, -16200], "width": 5200, "depth": 5200, "below_depth": 7500, "above_height": 7500, "palette": "warm", "silhouette": 1 }
   ],
   "ambience_zones": [
     { "profile": "room", "box": [-1491.6, 40999.5, 112.1, -1488.6, 41003, 116.6] },
     { "profile": "roof", "box": [-1493, 41038, 95, -1470, 41060, 118] },
     { "profile": "market", "box": [-1900, 40990, -31, -1100, 41060, 31] },
+    { "profile": "industrial", "box": [-1100, 40990, -40, 1100, 41100, 40] },
     { "profile": "residential", "box": [-1950, 40990, -450, -1050, 41200, 450] },
     { "profile": "foundry", "box": [1700, 40990, -60, 2100, 41064, 60] },
     { "profile": "industrial", "box": [1100, 40990, -700, 2740, 41300, 700] },
     { "profile": "crust", "box": [2400, -100, -900, 4100, 450, 700] },
     { "profile": "shaft", "box": [3100, 450, -340, 3420, 41100, -20] },
     { "profile": "edge", "box": [2740, 40990, -400, 3040, 41450, 400] },
+    { "profile": "arrival", "box": [5950, 40990, -14740, 6060, 41040, -14620] },
+    { "profile": "gap", "box": [5900, 40950, -14760, 6060, 41100, -240] },
     { "profile": "gap", "box": [3040, 39000, -3000, 6040, 43000, 3000] },
-    { "profile": "preserve", "box": [6150, 40995, -440, 6355, 41230, -220] },
-    { "profile": "hydroponics", "box": [6175, 40995, -220, 6330, 41020, -100] },
+    { "profile": "preserve", "box": [6120, 40995, -1700, 7080, 41860, -700] },
+    { "profile": "hydroponics", "box": [6140, 40995, -700, 6840, 41040, -100] },
+    { "profile": "arrival", "box": [6340, 40995, 110, 6940, 41600, 430] },
     { "profile": "arrival", "box": [6040, 40990, -400, 6400, 41450, 400] }
   ],
   "ambience_profiles": {

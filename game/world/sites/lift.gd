@@ -33,7 +33,7 @@ func _ready() -> void:
 	platform.set_meta(&"surface", "metal")
 	add_child(platform)
 	SliceMaterials.add_box(platform, platform, Vector3(0, -0.08, 0), Vector3(3.0, 0.2, 3.0), &"bridge_deck")
-	SliceMaterials.add_box(platform, platform, Vector3(0, 0.57, -1.45), Vector3(3.0, 1.1, 0.1), &"structure")
+	SliceMaterials.add_box(platform, platform, Vector3(-0.06, 0.57, -1.45), Vector3(2.88, 1.1, 0.1), &"structure")
 	SliceMaterials.add_box(platform, platform, Vector3(1.45, 0.57, 0), Vector3(0.1, 1.1, 3.0), &"structure")
 	_gate_mesh = SliceMaterials.add_box(platform, null, Vector3(-1.45, 0.9, 0), Vector3(0.08, 0.08, 3.0), &"rail_glow", false)
 	_gate_shape = CollisionShape3D.new()
@@ -114,8 +114,11 @@ func _physics_process(delta: float) -> void:
 		var y := move_toward(prev_y, _target, lift_speed * delta)
 		var dy := y - prev_y
 		platform.position.y = y
+		platform.force_update_transform()
 		if on and absf(dy) > 0.0:
-			player.global_position.y += dy
+			player.global_position.y = platform.global_position.y + maxf(rel.y, 0.02)
+			if player is PlayerController:
+				(player as PlayerController).reset_fall_tracking()
 		_update_altitude_display()
 		if is_equal_approx(y, _target):
 			_moving = false

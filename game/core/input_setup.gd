@@ -17,6 +17,7 @@ static func ensure() -> void:
 	_key(&"rotate_item", KEY_R)
 	_key(&"toggle_map", KEY_M)
 	_key(&"toggle_journal", KEY_J)
+	_key(&"toggle_planet_view", KEY_P)
 	_key(&"toggle_lamp", KEY_F)
 	_key(&"release_mouse", KEY_ESCAPE)
 	_key(&"toggle_debug", KEY_F3)

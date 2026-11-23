@@ -150,12 +150,26 @@ func _build(site: Dictionary) -> void:
 	var vessel := SliceMaterials.add_box(self, null, Vector3(cx, 30.0, cz), Vector3(9.0, 9.0, 9.0), &"structure", false, Vector3(0, 0, deg_to_rad(-28.0)))
 	vessel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	SliceMaterials.add_box(self, null, Vector3(cx + 2.1, 33.9, cz), Vector3(7.0, 0.3, 7.0), &"molten", false, Vector3(0, 0, deg_to_rad(-28.0)))
-	_b(Vector3(cx - 0.3, 35.0, cz - 0.3), Vector3(cx + 0.3, H - 6.0, cz + 0.3), &"structure")
+	_b(Vector3(cx - 0.3, 35.0, cz - 0.3), Vector3(cx + 0.3, H - 9.0, cz + 0.3), &"structure")
 	_b(Vector3(cx - 3.0, H - 9.0, cz - 3.0), Vector3(cx + 3.0, H - 6.0, cz + 3.0), &"structure")
+	# Twin overhead bridge-crane rail girders & hoist trolley spanning the hall above the crucible.
+	for cr_s: float in [-1.0, 1.0]:
+		var gx0 := cx - 3.6 if cr_s < 0.0 else cx + 2.4
+		_b(Vector3(gx0, H - 10.2, -42.0), Vector3(gx0 + 1.2, H - 7.8, 42.0), &"structure")
+	_b(Vector3(cx - 4.2, H - 11.4, cz - 4.2), Vector3(cx + 4.2, H - 9.6, cz + 4.2), &"structure")
 	SliceMaterials.add_cylinder(self, Vector3(cx + 6.2, 31.0, cz), Vector3(cx + 6.2, 4.6, cz), 0.45, &"molten", 6)
 	_b(Vector3(cx + 3.7, -0.5, cz - 2.75), Vector3(cx + 8.7, 4.6, cz + 2.75), &"structure", metal)
 	SliceMaterials.add_box(self, null, Vector3(cx + 6.2, 4.65, cz), Vector3(4.6, 0.1, 5.0), &"molten", false)
 	SliceMaterials.add_coronas(self, [Vector3(cx + 6.2, 6.0, cz), Vector3(cx + 6.2, 18.0, cz), Vector3(cx + 3.5, 34.0, cz)], 9.0, &"corona_molten")
+	# Upward molten under-glow illuminating the tilted hanging crucible vessel & hoist silhouette (025s).
+	var crucible_glow := OmniLight3D.new()
+	crucible_glow.position = Vector3(cx + 2.2, 22.0, cz - 2.4)
+	crucible_glow.light_color = Color(1.0, 0.56, 0.18)
+	crucible_glow.light_energy = 7.5
+	crucible_glow.omni_range = 52.0
+	crucible_glow.omni_attenuation = 1.1
+	crucible_glow.light_volumetric_fog_energy = 1.4
+	add_child(crucible_glow)
 	var hot := OmniLight3D.new()
 	hot.position = Vector3(cx + 6.2, 7.0, cz - 2.0)
 	hot.light_color = Color(1.0, 0.5, 0.15)
@@ -332,6 +346,20 @@ func _build_service_bypass(xa: float, xb: float, xm: float, body: StaticBody3D, 
 		+ "Radiant heat drains water fast if you walk straight past the moulds.\n"
 		+ "Crew are advised to take this north gallery and restock at the mid-wall locker.",
 		Vector3(x0 + 4.0, 1.45, z_out + 0.06), 0.0, "plaque"))
+	# Quiet maintenance-corridor Continuum shrine tucked against the north bypass wall (xm - 28).
+	var f_shrine := ContinuumEmblem.create(0.55, &"copper", &"structure", true)
+	f_shrine.position = Vector3(xm - 28.0, 1.98, z_in - 0.14)
+	f_shrine.rotation.y = PI
+	add_child(f_shrine)
+	add_child(ReadableNote.create(
+		"NOTE-CONTINUUM-SHRINE", "Maintenance Shrine Inscription",
+		"SHRINE OF THE CONTINUUM  ·  FOUNDRY SERVICE GALLERY\n\n"
+		+ "Three rings upon one spine: Matter, Life, and Memory.\n"
+		+ "To weld, to mend, to keep the lines unbroken is sacred work;\n"
+		+ "to break what joins civilization is Severance — the only unforgivable sin.\n\n"
+		+ "Even here behind sixty metres of foundry steel, crews sometimes pause\n"
+		+ "when the Void Bell vibrates faintly through the floor plates.",
+		Vector3(xm - 26.6, 1.45, z_in - 0.12), PI, "plaque"))
 
 
 func _sparks(p: Vector3) -> void:

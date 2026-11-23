@@ -180,21 +180,27 @@ static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zo
 	var fx := lot.size.x - il - ir
 	var fz := lot.size.y - it - ib
 	var h: float
+	var cx := lot.position.x + il + fx * 0.5
+	var cz := lot.position.y + it + fz * 0.5
+	# Deterministic macro skyline clustering: alternates low-rise breathing pockets
+	# (~0.58x) with towering civic/industrial spire ridges (~1.55x) so high vistas
+	# like 300s_roof_vista read as layered megastructure districts rather than uniform spikes.
+	var cluster_wave := 0.5 + 0.5 * sin(cx * 0.0042 + cz * 0.0029) * cos(cx * 0.0021 - cz * 0.0048)
+	var cluster_bias := lerpf(0.58, 1.55, pow(cluster_wave, 1.35))
 	match zone:
 		Zone.RESIDENTIAL:
 			h = 9.0 + floorf(r_h * 8.0) * STOREY
 		Zone.INDUSTRIAL:
 			h = 12.0 + r_h * 30.0
 		_:
-			if r_mega < 0.015:
+			var mega_chance := 0.009 + 0.018 * pow(cluster_wave, 2.0)
+			if r_mega < mega_chance:
 				h = 280.0 + r_mh * (float(ctx.ceiling) - 340.0)
 			else:
-				h = (14.0 + pow(r_h, 2.2) * 165.0) * height_bias
+				h = (14.0 + pow(r_h, 2.2) * 165.0) * height_bias * cluster_bias
 	h = minf(ceilf(h / STOREY) * STOREY, float(ctx.ceiling) - 40.0)
 	# The seed carries the zone in its integer part (read by the facade shader).
 	var seed := float(zone) + r_seed * 0.9
-	var cx := lot.position.x + il + fx * 0.5
-	var cz := lot.position.y + it + fz * 0.5
 	var top := h
 	var top_fx := fx
 	var top_fz := fz
@@ -239,6 +245,10 @@ static func _try_building(out: Array, rng: RandomNumberGenerator, lot: Rect2, zo
 		var rx := top_cx + (r_roof_p.x - 0.5) * maxf(top_fx - rw - 1.0, 0.0)
 		var rz := top_cz + (r_roof_p.z - 0.5) * maxf(top_fz - rd - 1.0, 0.0)
 		_box(out, rx, top - 0.5, rz, rw, rh + 0.5, rd, seed)
+		# Slender broadcast / ventilation spire on the tallest megatowers.
+		if zone == Zone.URBAN and top > 180.0 and r_roof < 0.42:
+			var spire_h := 18.0 + r_mh * 34.0
+			_box(out, top_cx, top + rh - 0.5, top_cz, 1.35, spire_h, 1.35, seed)
 
 
 ## Box from y0 upward with height h.

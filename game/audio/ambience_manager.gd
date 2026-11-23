@@ -9,6 +9,7 @@ const BED_LAYERS := [
 	"rumble", "vent", "room_tone", "wind", "market", "machinery",
 	"cable_tension", "elec_hum", "bridge_vib", "water_fall", "drill_drone",
 ]
+const VOID_BELL_PATH := "res://audio/religion/religious_long_bell.mp3"
 const FADE_TIME := 2.5
 const SILENT_DB := -60.0
 
@@ -19,6 +20,15 @@ var _beds: Dictionary = {}           # layer -> AudioStreamPlayer
 var _target_db: Dictionary = {}      # layer -> dB
 var _target_pitch := 1.0
 var _reverb: AudioEffectReverb
+var _bell_bus_idx := -1
+var _bell_lpf: AudioEffectLowPassFilter
+var _bell_stream: AudioStream
+var _bell_timer := 95.0
+var _bell_first_exterior_primed := false
+var _bell_sub_pending := -1.0
+var _bell_sub_pitch := 0.5
+var _bell_target_db := -18.0
+var _bell_target_cutoff := 800.0
 var _oneshots: Dictionary = {}       # name -> AudioStream
 var _steps: Dictionary = { "stone": [], "metal": [] }
 var _step_player: AudioStreamPlayer
@@ -77,6 +87,9 @@ func setup(world_def: Dictionary, listener: Node3D) -> void:
 		var mpath := "res://audio/%s.wav" % mname
 		if ResourceLoader.exists(mpath):
 			_music_tracks[mname] = load(mpath)
+	if ResourceLoader.exists(VOID_BELL_PATH):
+		_bell_stream = load(VOID_BELL_PATH)
+	_bell_timer = _rng.randf_range(110.0, 190.0)
 	_apply_profile(_profile_at_listener(), true)
 
 
@@ -100,6 +113,51 @@ func _setup_buses() -> void:
 		var j := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(j, &"Ambience")
 		AudioServer.set_bus_send(j, &"Master")
+	# Dedicated acoustic post-processing bus for The Void Bell (Continuum sacred gong):
+	# zone-reactive LowPass -> colossal twin-stack canyon Delay echoes -> cavernous Reverb -> Compressor.
+	_bell_bus_idx = AudioServer.get_bus_index(&"VoidBell")
+	if _bell_bus_idx == -1:
+		AudioServer.add_bus()
+		_bell_bus_idx = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(_bell_bus_idx, &"VoidBell")
+		AudioServer.set_bus_send(_bell_bus_idx, &"Master")
+		_bell_lpf = AudioEffectLowPassFilter.new()
+		_bell_lpf.cutoff_hz = 1200.0
+		_bell_lpf.resonance = 0.55
+		AudioServer.add_bus_effect(_bell_bus_idx, _bell_lpf)
+		var dly := AudioEffectDelay.new()
+		dly.dry = 0.88
+		dly.tap1_active = true
+		dly.tap1_delay_ms = 780.0
+		dly.tap1_level_db = -7.0
+		dly.tap1_pan = -0.55
+		dly.tap2_active = true
+		dly.tap2_delay_ms = 1480.0
+		dly.tap2_level_db = -10.5
+		dly.tap2_pan = 0.55
+		dly.feedback_active = true
+		dly.feedback_delay_ms = 1150.0
+		dly.feedback_level_db = -10.0
+		dly.feedback_lowpass = 1650.0
+		AudioServer.add_bus_effect(_bell_bus_idx, dly)
+		var rev := AudioEffectReverb.new()
+		rev.room_size = 1.0
+		rev.damping = 0.20
+		rev.spread = 1.0
+		rev.hipass = 0.0
+		rev.dry = 0.72
+		rev.wet = 0.80
+		rev.predelay_msec = 95.0
+		rev.predelay_feedback = 0.35
+		AudioServer.add_bus_effect(_bell_bus_idx, rev)
+		var comp := AudioEffectCompressor.new()
+		comp.threshold = -1.5
+		comp.ratio = 4.0
+		comp.attack_us = 2500.0
+		comp.release_ms = 250.0
+		AudioServer.add_bus_effect(_bell_bus_idx, comp)
+	else:
+		_bell_lpf = AudioServer.get_bus_effect(_bell_bus_idx, 0) as AudioEffectLowPassFilter
 
 
 func _load_loop(path: String) -> AudioStreamWAV:
@@ -144,8 +202,40 @@ func _apply_profile(name: String, instant := false) -> void:
 	_reverb.room_size = float(rv.get("room", 0.8))
 	_reverb.wet = float(rv.get("wet", 0.3))
 	_reverb.damping = float(rv.get("damping", 0.5))
+	_update_void_bell_zone(name, instant)
 	if not instant:
 		_maybe_trigger_discovery_music(name)
+
+
+## Scales The Void Bell's acoustic loudness & low-pass filtering by architectural exposure:
+## colossal, echoing, and megalophobic out in the chasm between stacks; deeply muffled indoors.
+func _update_void_bell_zone(profile_name: String, instant: bool) -> void:
+	match profile_name:
+		"gap":
+			_bell_target_db = 1.5
+			_bell_target_cutoff = 4200.0
+		"edge", "shaft", "arrival":
+			_bell_target_db = -1.5
+			_bell_target_cutoff = 3200.0
+		"roof", "crust":
+			_bell_target_db = -7.0
+			_bell_target_cutoff = 1550.0
+		"industrial", "foundry", "preserve":
+			_bell_target_db = -13.5
+			_bell_target_cutoff = 900.0
+		_:
+			_bell_target_db = -19.5
+			_bell_target_cutoff = 520.0
+	if instant and _bell_bus_idx >= 0:
+		AudioServer.set_bus_volume_db(_bell_bus_idx, _bell_target_db)
+		if _bell_lpf != null:
+			_bell_lpf.cutoff_hz = _bell_target_cutoff
+	# First time the player steps outside between the stacks, gently prime the first Void Bell toll
+	# so they experience the colossal chasm resonance within ~14-22 s, then space subsequent tolls minutes apart.
+	if not _bell_first_exterior_primed and (profile_name == "gap" or profile_name == "edge" or profile_name == "shaft"):
+		_bell_first_exterior_primed = true
+		if _bell_timer > 22.0:
+			_bell_timer = _rng.randf_range(13.0, 21.0)
 
 
 func _maybe_trigger_discovery_music(profile_name: String) -> void:
@@ -197,6 +287,69 @@ func _process(delta: float) -> void:
 		var pace := float(p.get("oneshot_interval", 1.0))
 		_oneshot_timer = _rng.randf_range(10.0, 28.0) * pace
 		_distant_oneshot()
+	_tick_void_bell(delta)
+
+
+func _tick_void_bell(delta: float) -> void:
+	if _bell_bus_idx >= 0:
+		var k := clampf(delta * 1.4, 0.0, 1.0)
+		var cur_db := AudioServer.get_bus_volume_db(_bell_bus_idx)
+		AudioServer.set_bus_volume_db(_bell_bus_idx, lerpf(cur_db, _bell_target_db, k))
+		if _bell_lpf != null:
+			_bell_lpf.cutoff_hz = lerpf(_bell_lpf.cutoff_hz, _bell_target_cutoff, k)
+	if _bell_stream == null:
+		return
+	if _bell_sub_pending >= 0.0:
+		_bell_sub_pending -= delta
+		if _bell_sub_pending <= 0.0:
+			_bell_sub_pending = -1.0
+			_play_void_bell_sub_layer(_bell_sub_pitch)
+	_bell_timer -= delta
+	if _bell_timer <= 0.0:
+		var is_chasm := current_profile == "gap" or current_profile == "edge" or current_profile == "shaft" or current_profile == "arrival"
+		# Extremely rare & sacred pacing: ~2.7-5.0 minutes outside in the chasm, ~5.5-9.0 minutes indoors.
+		_bell_timer = _rng.randf_range(165.0, 300.0) if is_chasm else _rng.randf_range(330.0, 540.0)
+		trigger_void_bell()
+
+
+## Strikes The Void Bell deep within the megastructure:
+## 1) Pitched-down colossal metallic gong in 3D space across the chasm (longer tail + immense scale)
+## 2) Delayed octave-lower structural sub-resonance so the entire megastructure quietly vibrates.
+func trigger_void_bell() -> void:
+	if _bell_stream == null or _listener == null:
+		return
+	var base_pitch := _rng.randf_range(0.79, 0.87)
+	# Place the distant sacred source ~1,200 m out across the abyss so stereo imaging feels vast.
+	var az := _rng.randf_range(-0.9, 0.9) + (0.0 if _rng.randf() < 0.5 else PI)
+	var dir := Vector3(sin(az), _rng.randf_range(-0.35, 0.15), -cos(az)).normalized()
+	var s := AudioStreamPlayer3D.new()
+	s.stream = _bell_stream
+	s.bus = &"VoidBell"
+	s.unit_size = 950.0
+	s.max_distance = 14000.0
+	s.volume_db = 0.0
+	s.pitch_scale = base_pitch
+	s.attenuation_filter_cutoff_hz = 5000.0
+	add_child(s)
+	s.global_position = _listener.global_position + dir * 1200.0
+	s.play()
+	s.finished.connect(s.queue_free)
+	# Queue the deep octave-lower structural vibration layer 0.38 s after impact.
+	_bell_sub_pitch = base_pitch * 0.62
+	_bell_sub_pending = 0.38
+
+
+func _play_void_bell_sub_layer(pitch: float) -> void:
+	if _bell_stream == null:
+		return
+	var sub := AudioStreamPlayer.new()
+	sub.stream = _bell_stream
+	sub.bus = &"VoidBell"
+	sub.volume_db = -8.5
+	sub.pitch_scale = pitch
+	add_child(sub)
+	sub.play()
+	sub.finished.connect(sub.queue_free)
 
 
 func _pick_oneshot(profile_name: String) -> String:

@@ -88,7 +88,7 @@ func _ready() -> void:
 
 	_hint_label = Label.new()
 	_hint_label.position = Vector2(12, 522)
-	_hint_label.text = "[Tab] Pack   [E] Interact   [M] Map   [F] Lamp   [F5/F9] Save/Load"
+	_hint_label.text = "[Tab] Pack   [E] Interact   [M] Map   [P] Planet   [F] Lamp   [F5/F9] Save/Load"
 	_hint_label.add_theme_font_size_override(&"font_size", 8)
 	_hint_label.add_theme_color_override(&"font_color", Color(0.72, 0.62, 0.48, 0.45))
 	_hint_label.add_theme_color_override(&"font_shadow_color", Color(0, 0, 0, 0.7))

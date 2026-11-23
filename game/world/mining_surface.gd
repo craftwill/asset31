@@ -36,12 +36,12 @@ func _build() -> void:
 	for tier in 4:
 		var inner := 190.0 + float(tier) * 78.0
 		var bh := 18.0 + float(tier) * 24.0
-		var bw := 82.0
-		var y_c := bh * 0.5 - 2.0
+		var bw := 77.5
+		var y_c := bh * 0.5 - 2.0 - float(tier) * 0.4
 		benches.append({ "c": Vector3(0, y_c, -(inner + bw * 0.5)), "s": Vector3((inner + bw) * 2.0, bh, bw) })
 		benches.append({ "c": Vector3(0, y_c, (inner + bw * 0.5)), "s": Vector3((inner + bw) * 2.0, bh, bw) })
-		benches.append({ "c": Vector3(-(inner + bw * 0.5), y_c, 0), "s": Vector3(bw, bh, inner * 2.0) })
-		benches.append({ "c": Vector3((inner + bw * 0.5), y_c, 0), "s": Vector3(bw, bh, inner * 2.0) })
+		benches.append({ "c": Vector3(-(inner + bw * 0.5), y_c, 0), "s": Vector3(bw, bh, inner * 2.0 - 0.5) })
+		benches.append({ "c": Vector3((inner + bw * 0.5), y_c, 0), "s": Vector3(bw, bh, inner * 2.0 - 0.5) })
 	SliceMaterials.add_multimesh(self, benches, &"crust_rock")
 
 	# 2. Colossal Mantle Underside Keel overhead (y = +380 m) + 6 titanic 60 m support legs
@@ -59,8 +59,10 @@ func _build() -> void:
 		var lx_p := cos(ang) * leg_r
 		var lz_p := sin(ang) * leg_r
 		keel.append({ "c": Vector3(lx_p, 195.0, lz_p), "s": Vector3(52.0, 420.0, 52.0) })
-	# Lower collar of the 300 m cylindrical Mining Shaft 77-N plunging upward from the keel.
+	# Lower collar of the 300 m cylindrical Mining Shaft 77-N plunging upward from the keel (y = 380..1200 m),
+	# meeting DeepShaftSleeve flush at y = 1200.0 m with matching world-Y shaft_wall, 100 m rings, and 8 lattice towers.
 	var shaft_walls: Array = []
+	var shaft_rings: Array = []
 	var shaft_lamps: Array = []
 	var R := 150.0
 	var sides := 24
@@ -68,10 +70,30 @@ func _build() -> void:
 	for i in sides:
 		var ang := float(i) * TAU / float(sides)
 		var rot := Vector3(0.0, -ang + PI * 0.5, 0.0)
-		shaft_walls.append({ "c": Vector3(cos(ang) * (R + 4.0), 660.0, sin(ang) * (R + 4.0)), "s": Vector3(chord + 1.0, 620.0, 8.0), "r": rot, "seed": float(i) * 0.04 })
+		shaft_walls.append({ "c": Vector3(cos(ang) * (R + 4.0), 820.5, sin(ang) * (R + 4.0)), "s": Vector3(chord + 1.0, 759.0, 8.0), "r": rot, "seed": float(i) * 0.04 })
 		shaft_lamps.append({ "c": Vector3(cos(ang) * (R - 3.0), 382.0, sin(ang) * (R - 3.0)), "s": Vector3(chord * 0.85, 1.4, 1.4), "r": rot })
+		for ry: float in [500.0, 600.0, 700.0, 800.0, 900.0, 1000.0, 1100.0]:
+			shaft_rings.append({ "c": Vector3(cos(ang) * (R - 2.2), ry, sin(ang) * (R - 2.2)), "s": Vector3(chord, 4.2, 4.8), "r": rot })
+			shaft_lamps.append({ "c": Vector3(cos(ang) * (R - 4.7), ry + 2.3, sin(ang) * (R - 4.7)), "s": Vector3(chord * 0.9, 0.22, 0.22), "r": rot })
+	var tower_r := R * 0.62
+	var ts := 10.0
+	for ti in 8:
+		var ang := (float(ti) + 0.5) * TAU / 8.0
+		var tx := cos(ang) * tower_r
+		var tz := sin(ang) * tower_r
+		for c_off in [Vector2(-ts * 0.5, -ts * 0.5), Vector2(ts * 0.5, -ts * 0.5), Vector2(-ts * 0.5, ts * 0.5), Vector2(ts * 0.5, ts * 0.5)]:
+			shaft_rings.append({ "c": Vector3(tx + c_off.x, 790.0, tz + c_off.y), "s": Vector3(1.1, 820.0, 1.1) })
+		shaft_lamps.append({ "c": Vector3(tx - cos(ang) * (ts * 0.5 + 0.6), 790.0, tz - sin(ang) * (ts * 0.5 + 0.6)), "s": Vector3(0.28, 820.0, 0.28) })
+		var by := 400.0
+		while by < 1200.0:
+			shaft_rings.append({ "c": Vector3(tx, by, tz - ts * 0.5), "s": Vector3(ts - 1.1, 0.6, 0.6) })
+			shaft_rings.append({ "c": Vector3(tx, by, tz + ts * 0.5), "s": Vector3(ts - 1.1, 0.6, 0.6) })
+			shaft_rings.append({ "c": Vector3(tx - ts * 0.5, by, tz), "s": Vector3(0.6, 0.6, ts - 1.1) })
+			shaft_rings.append({ "c": Vector3(tx + ts * 0.5, by, tz), "s": Vector3(0.6, 0.6, ts - 1.1) })
+			by += 25.0
 	SliceMaterials.add_multimesh(self, keel, &"structure")
-	SliceMaterials.add_multimesh(self, shaft_walls, &"stack_wall")
+	SliceMaterials.add_multimesh(self, shaft_rings, &"structure")
+	SliceMaterials.add_multimesh(self, shaft_walls, &"shaft_wall")
 	SliceMaterials.add_multimesh(self, shaft_lamps, &"window_glow")
 
 	# 3. Three colossal 145 m Vertical Core-Drill Excavation Rigs extracting iron ore from the crust.
@@ -86,19 +108,19 @@ func _build() -> void:
 			for sz: float in [-14.0, 14.0]:
 				rig_steel.append({ "c": rp + Vector3(sx, 72.0, sz), "s": Vector3(3.2, 146.0, 3.2) })
 		for by: float in [28.0, 64.0, 102.0, 138.0]:
-			rig_steel.append({ "c": rp + Vector3(0, by, -14.0), "s": Vector3(28.0, 2.2, 2.2) })
-			rig_steel.append({ "c": rp + Vector3(0, by, 14.0), "s": Vector3(28.0, 2.2, 2.2) })
-			rig_steel.append({ "c": rp + Vector3(-14.0, by, 0), "s": Vector3(2.2, 2.2, 28.0) })
-			rig_steel.append({ "c": rp + Vector3(14.0, by, 0), "s": Vector3(2.2, 2.2, 28.0) })
+			rig_steel.append({ "c": rp + Vector3(0, by, -14.0), "s": Vector3(24.6, 2.2, 2.2) })
+			rig_steel.append({ "c": rp + Vector3(0, by, 14.0), "s": Vector3(24.6, 2.2, 2.2) })
+			rig_steel.append({ "c": rp + Vector3(-14.0, by, 0), "s": Vector3(2.2, 2.2, 24.6) })
+			rig_steel.append({ "c": rp + Vector3(14.0, by, 0), "s": Vector3(2.2, 2.2, 24.6) })
 		rig_beacons.append({ "c": rp + Vector3(0, 147.0, 0), "s": Vector3(1.8, 1.8, 1.8) })
 		# Glowing excavated bore crater under the rig.
 		SliceMaterials.add_box(self, null, rp + Vector3(0, 0.4, 0), Vector3(22.0, 0.8, 22.0), &"molten_slow", false)
 		rig_glows.append(rp + Vector3(0, 6.0, 0))
-		# Rotating glowing vertical core-drill column.
+		# Rotating glowing vertical core-drill column (starts inside bore crater so bottom never shares y=0).
 		var drill := Node3D.new()
 		drill.position = rp
 		add_child(drill)
-		SliceMaterials.add_box(drill, null, Vector3(0, 62.0, 0), Vector3(5.5, 124.0, 5.5), &"structure", false)
+		SliceMaterials.add_box(drill, null, Vector3(0, 62.3, 0), Vector3(5.5, 123.4, 5.5), &"structure", false)
 		SliceMaterials.add_box(drill, null, Vector3(0, 14.0, 0), Vector3(7.4, 24.0, 7.4), &"drill_glow", false)
 		_drills.append({ "node": drill, "speed": 0.45 + float(ri) * 0.12 })
 		# Heavy ore-conveyor bridge running from rig toward the central shaft haulage base.
@@ -118,10 +140,10 @@ func _build() -> void:
 
 
 func _build_outpost(body: StaticBody3D, metal: StaticBody3D) -> void:
-	# Elevated steel grated operations deck (x in [-16, +9.4], z in [-14, +14]) flush with DeepRelayLift west landing.
-	SliceMaterials.add_box(self, metal, Vector3(-3.3, -0.25, 0), Vector3(25.4, 0.60, 28.0), &"bridge_deck")
-	# Walkable concrete ramp on the west edge (-16..-24) leading straight out onto Asset 31's raw basalt crust!
-	SliceMaterials.add_box(self, body, Vector3(-19.5, -0.18, 0), Vector3(8.0, 0.44, 10.0), &"concrete_floor")
+	# Elevated steel grated operations deck (x in [-16, +9.34], z in [-14, +14]) flush with DeepRelayLift west landing.
+	SliceMaterials.add_box(self, metal, Vector3(-3.33, -0.25, 0), Vector3(25.34, 0.60, 28.0), &"bridge_deck")
+	# Walkable concrete ramp on the west edge (-16.04..-24.04) leading straight out onto Asset 31's raw basalt crust!
+	SliceMaterials.add_box(self, body, Vector3(-20.04, -0.18, 0), Vector3(8.0, 0.44, 10.0), &"concrete_floor")
 	# Glowing amber safety rails around perimeter (open on east at z in [-1.2, +3.2] for relay cage, open west for crust ramp).
 	var rails: Array = []
 	for sz: float in [-13.9, 13.9]:
@@ -153,8 +175,8 @@ func _build_outpost(body: StaticBody3D, metal: StaticBody3D) -> void:
 	SliceMaterials.add_box(self, metal, Vector3(-7.0, 0.06, -9.0), Vector3(7.8, 0.08, 5.8), &"floor_wood")
 	SliceMaterials.add_box(self, body, Vector3(-7.0, 3.25, -9.0), Vector3(8.4, 0.30, 6.4), &"structure")
 	SliceMaterials.add_box(self, metal, Vector3(-7.0, 1.60, -11.85), Vector3(8.0, 3.1, 0.3), &"plate")
-	SliceMaterials.add_box(self, metal, Vector3(-10.85, 1.60, -9.0), Vector3(0.3, 3.1, 5.8), &"plate")
-	SliceMaterials.add_box(self, metal, Vector3(-3.15, 1.60, -9.0), Vector3(0.3, 3.1, 5.8), &"plate")
+	SliceMaterials.add_box(self, metal, Vector3(-10.85, 1.60, -9.0), Vector3(0.3, 3.1, 5.4), &"plate")
+	SliceMaterials.add_box(self, metal, Vector3(-3.15, 1.60, -9.0), Vector3(0.3, 3.1, 5.4), &"plate")
 	# South wall split around doorway x in [-7.8, -6.2].
 	SliceMaterials.add_box(self, metal, Vector3(-9.3, 1.60, -6.15), Vector3(3.0, 3.1, 0.3), &"plate")
 	SliceMaterials.add_box(self, metal, Vector3(-4.7, 1.60, -6.15), Vector3(3.0, 3.1, 0.3), &"plate")
