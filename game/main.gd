@@ -40,6 +40,7 @@ const SHOTS := [
 	["twin_stack_horizon", [4420.0, 41000.05, -4.5], -6.0, 4.0],
 	["exp077_station", [5988.5, 41000.08, -264.0], 26.0, 2.0],
 	["stk0414_overlook", [6016.0, 41000.08, -14648.0], 185.0, 2.0],
+	["void_bell_sanctum", [6007.7, 41000.08, -14874.0], 15.0, 10.0],
 ]
 
 # Quick-jump preview locations (Ctrl+1..0, -, =, Bksp, [, ], ;, ', ., /): [label, logical_pos, yaw_deg, pitch_deg]
@@ -63,6 +64,7 @@ const TELEPORTS := {
 	KEY_APOSTROPHE: ["' · Misty Glass Terrace (400s)", [6922.0, 41028.05, 110.0], 112.0, -2.0],
 	KEY_PERIOD: [". · EXP-077 Express Terminal (STA-0413-N)", [5988.5, 41000.08, -264.0], 26.0, 2.0],
 	KEY_SLASH: ["/ · STK-0414 South Overlook (17.5 km North)", [6016.0, 41000.08, -14648.0], 185.0, 2.0],
+	KEY_BACKSLASH: ["\\ · Great Belfry of the Continuum (Void Bell Sanctum)", [6007.7, 41000.08, -14874.0], 15.0, 10.0],
 }
 
 var world_def: Dictionary
@@ -135,6 +137,8 @@ func _ready() -> void:
 			add_child(DistantStack.build(st))
 		elif st.kind == "inter_stack_express":
 			add_child(InterStackExpress.build())
+		elif st.kind == "void_bell_sanctum":
+			add_child(VoidBellSanctum.build())
 	_spawn_player()
 	_setup_gameplay()
 	atmosphere.follow(player)
@@ -346,6 +350,11 @@ func _on_tram_console_activated(console: TramConsole) -> void:
 
 
 func _on_express_console_activated(console: ExpressConsole) -> void:
+	if console.sanctum != null and console.sanctum.has_method(&"activate_console"):
+		var smsg := String(console.sanctum.call(&"activate_console", ambience))
+		if smsg != "":
+			hud.show_toast(smsg, 4.0)
+		return
 	if console.express == null:
 		return
 	var msg := console.express.activate_console(console.station_side)
@@ -536,6 +545,8 @@ func _atmosphere_mood(lp: PackedFloat64Array) -> String:
 		return "hydroponics"
 	if lp[0] >= 6340.0 and lp[0] <= 6950.0 and lp[2] >= 95.0 and lp[2] <= 430.0 and lp[1] >= 40990.0 and lp[1] <= 41620.0:
 		return "glass_terrace"
+	if lp[0] >= 5750.0 and lp[0] <= 6230.0 and lp[2] < -14720.0 and lp[2] >= -15200.0 and lp[1] >= 40500.0:
+		return "belfry"
 	if lp[0] >= 5860.0 and lp[0] <= 6080.0 and lp[2] <= -220.0 and lp[2] >= -14820.0 and lp[1] >= 40500.0:
 		return "gap"
 	if lp[0] >= 2850.0 and lp[0] <= 6220.0 and absf(lp[2]) <= 450.0 and lp[1] >= 40500.0:
@@ -550,7 +561,9 @@ func _check_landmark_discovery(lp: PackedFloat64Array) -> void:
 	var label := ""
 	if lp[1] < 450.0 and lp[0] >= 2400.0 and lp[0] <= 4100.0:
 		id = "crust"; label = "Asset 31 Planetary Crust (0 m)"
-	elif lp[0] >= 5950.0 and lp[0] <= 6060.0 and lp[2] <= -14620.0 and lp[2] >= -14750.0:
+	elif lp[0] >= 5780.0 and lp[0] <= 6200.0 and lp[2] < -14740.0 and lp[2] >= -15180.0:
+		id = "belfry0414"; label = "Great Belfry of the Continuum (Void Bell Sanctum)"
+	elif lp[0] >= 5950.0 and lp[0] <= 6060.0 and lp[2] <= -14620.0 and lp[2] >= -14740.0:
 		id = "stk0414"; label = "STK-0414 South Terminal (17.5 km North)"
 	elif lp[0] >= 5950.0 and lp[0] <= 6040.0 and lp[2] <= -230.0 and lp[2] >= -340.0:
 		id = "express_south"; label = "STA-0413-N Inter-Stack Express Terminal"
@@ -632,7 +645,9 @@ func _region_name(lp: PackedFloat64Array) -> String:
 		return "CRUST-00 (Asset 31 Planetary Surface · 0 m)"
 	if lp[0] >= 6120.0 and lp[0] <= 7080.0 and lp[2] >= -1700.0 and lp[2] <= -700.0:
 		return "STK-0413 / Ecological Preserve 413-B"
-	if lp[0] >= 5950.0 and lp[0] <= 6060.0 and lp[2] <= -14620.0 and lp[2] >= -14750.0:
+	if lp[0] >= 5780.0 and lp[0] <= 6200.0 and lp[2] < -14740.0 and lp[2] >= -15180.0:
+		return "STK-0414 / Great Belfry of the Continuum (BELFRY-0414)"
+	if lp[0] >= 5950.0 and lp[0] <= 6060.0 and lp[2] <= -14620.0 and lp[2] >= -14740.0:
 		return "STK-0414 / South Terminal STA-0414-S (17.5 km North)"
 	if lp[0] >= 5950.0 and lp[0] <= 6040.0 and lp[2] <= -230.0 and lp[2] >= -340.0:
 		return "STA-0413-N (Inter-Stack Express EXP-077)"
@@ -776,6 +791,7 @@ func _load(path := SAVE_PATH) -> bool:
 
 func _handle_cmdline() -> void:
 	var shots_dir := ""
+	var shot_filter := ""
 	var planet_shots_dir := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--no-post":
@@ -806,13 +822,15 @@ func _handle_cmdline() -> void:
 			return
 		elif arg.begins_with("--planet-shots="):
 			planet_shots_dir = arg.get_slice("=", 1)
+		elif arg.begins_with("--shot-filter="):
+			shot_filter = arg.get_slice("=", 1)
 		elif arg.begins_with("--shots="):
 			shots_dir = arg.get_slice("=", 1)
 	if planet_shots_dir != "":
 		_run_planet_shots(planet_shots_dir)
 		return
 	if shots_dir != "":
-		_run_shots(shots_dir)
+		_run_shots(shots_dir, shot_filter)
 
 
 func _autopilot_step(delta: float) -> void:
@@ -848,7 +866,7 @@ func _autopilot_step(delta: float) -> void:
 		get_tree().quit(1)
 
 
-func _run_shots(dir: String) -> void:
+func _run_shots(dir: String, shot_filter := "") -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	debug_label.visible = false
 	hud.set_hud_visible(false)
@@ -857,6 +875,8 @@ func _run_shots(dir: String) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	for shot: Array in SHOTS:
+		if shot_filter != "" and not String(shot[0]).contains(shot_filter):
+			continue
 		_place_player(shot[1], deg_to_rad(shot[2]), deg_to_rad(shot[3]))
 		for i in 40:
 			await get_tree().process_frame
@@ -872,6 +892,9 @@ func _run_shots(dir: String) -> void:
 			shot[0], ms, int(1000.0 / ms),
 			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 			int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000.0)])
+	if shot_filter != "":
+		get_tree().quit(0)
+		return
 	# Also capture one UI verification shot showing the Tarkov grid inventory open in the home shelter.
 	_place_player(SHOTS[0][1], deg_to_rad(SHOTS[0][2]), deg_to_rad(SHOTS[0][3]))
 	var home_cab: LootContainer = null
@@ -1186,6 +1209,15 @@ func _run_selftest() -> void:
 	if ambience == null or ambience._bell_stream == null or AudioServer.get_bus_index(&"VoidBell") == -1:
 		fail.call("The Void Bell (religious_long_bell.mp3) or VoidBell FX bus missing")
 		return
+	var belfries := get_tree().get_nodes_in_group(VoidBellSanctum.GROUP)
+	if belfries.is_empty():
+		fail.call("VoidBellSanctum (BELFRY-0414) missing")
+		return
+	var belfry := belfries[0] as VoidBellSanctum
+	belfry.activate_console(ambience)
+	if belfry._strike_timer < 0.0:
+		fail.call("VoidBellSanctum strike animation failed to engage")
+		return
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(tmp_save))
 	ZFightLint.run(self, 2)
 	print("[Selftest] PASS: %d containers, %d notes, BridgeTram, DeepRelayLift (41 km), PlanetView, Journal, grid inventory, consumables, env zones, save/load round-trip OK." % [conts.size(), notes.size()])
@@ -1264,6 +1296,8 @@ const TOUR := [
 		[[0.0, 40.0, 0.0], [8.0, 8.0, 4.0]]],
 	["STK-0414 South Overlook — 17.5 km Back at Twin-Stack", [6016.0, 41000.08, -14648.0], 8.0, [], 0.0,
 		[[0.0, 170.0, 2.0], [8.0, 200.0, 2.0]]],
+	["Great Belfry of the Continuum — The Void Bell (STK-0414)", [6008.2, 41000.08, -14874.0], 9.0, [], 0.0,
+		[[0.0, 20.0, 9.0], [9.0, 12.0, 11.5]]],
 ]
 
 

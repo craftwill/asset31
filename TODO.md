@@ -1,11 +1,11 @@
 # Asset 31 — Master TODO List (Environment Rework + Transport + The Continuum)
 
-> All items in Sections 1, 2, 3, and 4 are **COMPLETE & VERIFIED** in [`build/Asset31_v7.exe`](file:///C:/Users/william/Desktop/asset31/asset31/build/Asset31_v7.exe).
+> All items in Sections 1, 2, 3, and 4 are **COMPLETE & VERIFIED** in [`build/Asset31_v8.exe`](file:///C:/Users/william/Desktop/asset31/asset31/build/Asset31_v8.exe).
 
 ---
 
 ## 1. Environment Rework & Polish
-- [x] **Zero-out all `ZFightLint` overlaps (`571 → 0`)** — scanned **6,222 authored boxes** across the entire game with **`0` coplanar face overlaps**
+- [x] **Zero-out all `ZFightLint` overlaps (`571 → 0`)** — scanned **6,575 authored boxes** across the entire game with **`0` coplanar face overlaps**
 - [x] **Walkability & "Go Anywhere Accessible" Pass** — end-of-corridor ramps + 4 mid-corridor highway ramps + 2.2 km elevated skywalk galleries on `SITE-HIGHWAY-412`, solid Glass Terrace parapet/vent/overlook collision, and north-wing Arrival catwalk spur straight onto `STA-0413-N`
 - [x] **District Architectural & Material Cohesion** — clustered macro skyline + spires, Foundry crucible light & overhead bridge-crane girders, bolted Market sign frames, Highway district threshold signs/gallery sconces/service cabinets, Arrival north/south wayfinding, and fixed floating lamp poles
 - [x] **Preserve Twin-Stack Landmark (`STK-0412` / `STK-0413` / `BR-077-A`)** with 3D exterior cliff buttresses & ledges + 4 distant stacks (`STK-0414`–`STK-0417`) at 16–19 km
@@ -30,6 +30,7 @@
 
 ## 4. Worldbuilding — The Religion of The Continuum & The Void Bell
 - [x] **The Void Bell (`res://audio/religion/religious_long_bell.mp3`)** — dedicated `VoidBell` megalophobic audio bus (`LowPass` zone occlusion -> twin-stack `780 ms / 1480 ms` canyon stereo `Delay` + `1150 ms` feedback tail -> cavernous `Reverb` -> `Compressor`), pitched-down colossal strike (`0.79–0.87x`) + delayed octave-lower structural sub-resonance (`0.62x`), loud & echoing between stacks (`gap`/`edge`/`shaft`/`arrival`), muffled indoors, spaced `2.7–5 min` outdoors / `5.5–9 min` indoors (with a `13–21 s` first-chasm-encounter prime + **`Ctrl+B`** instant on-demand trigger)
+- [x] **The Great Belfry of the Continuum (`BELFRY-0414`, [`game/world/void_bell_sanctum.gd`](file:///C:/Users/william/Desktop/asset31/asset31/game/world/void_bell_sanctum.gd), `Ctrl+\`)** — 400 m-wide cylindrical shaft cathedral inside distant `STK-0414` directly behind the `STA-0414-S` Express Terminal (`17.5 km` north), recreating [`religious_huge_bell.png`](file:///C:/Users/william/Desktop/asset31/asset31/reference_images/religion_concepts/religious_huge_bell.png): colossal 88 m-wide 12-sided 5-tier stepped Void Bell + 17 m dark-iron spherical clapper that physically swings with a golden interior shockwave flare when struck (`[E]` on the Resonance Strike Console or `Ctrl+B`), foreground lattice tower + 4-window glowing gondola + side-profile upper box-truss bridge (`+18 m`), cantilevered Pilgrim Overlook Platform with 2 pilgrim silhouettes, and Chime Keeper's Continuum Altar (`NOTE-VOID-BELL-SANCTUM`, `CONT-VOID-BELL-RELIC`)
 - [x] **Sacred Symbol of The Continuum (`game/world/continuum_emblem.gd`)** — vertical spine + three connected oxidized-copper rings (Matter, Life, Memory) with zero `ZFightLint` overlaps
 - [x] **Environmental Shrines & Plaques** — Wayside Continuum Shrine & plaque at `BR-077-A` Mid-Span Shelter (`NOTE-CONTINUUM-BRIDGE`), Foundry North Service Bypass Maintenance Shrine (`NOTE-CONTINUUM-SHRINE`), monumental Continuum emblems at East/West Edge Gates, Mining Shaft 77-N Hub, `EL-DEEP-00` 41 km elevator cage, and `STA-0414-S` cliff portal
-- [x] **Verified `--import`, `ZFightLint = 0` (6,222 boxes), `--selftest` (14 containers, 14 notes, `VoidBell` bus verified), and exported [`build/Asset31_v7.exe`](file:///C:/Users/william/Desktop/asset31/asset31/build/Asset31_v7.exe)**
+- [x] **Verified `--import`, `ZFightLint = 0` (6,575 boxes), `--selftest` (15 containers, 15 notes, `VoidBell` & `BELFRY-0414` verified), and exported [`build/Asset31_v8.exe`](file:///C:/Users/william/Desktop/asset31/asset31/build/Asset31_v8.exe)**

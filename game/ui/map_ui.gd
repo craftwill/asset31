@@ -144,7 +144,7 @@ func _build_ui() -> void:
 		[Vector2(356, 102), "1.5 km Shelter", Color(0.70, 0.86, 0.60)],
 		[Vector2(476, 98), "Bay 413-A + Preserve", Color(0.78, 0.96, 0.82)],
 		[Vector2(462, 184), "Glass Terrace", Color(0.84, 0.92, 0.88)],
-		[Vector2(346, 8), "↑ EXP-077 → STK-0414\n    (17.5 km North)", Color(0.74, 0.90, 1.0)],
+		[Vector2(336, 6), "↑ EXP-077 → STK-0414 (17.5 km)\n    + Great Belfry (Void Bell)", Color(0.74, 0.90, 1.0)],
 		[Vector2(462, 138), "West Arrival", Color(0.72, 0.84, 0.96)],
 		[Vector2(522, 186), "N", Color(0.95, 0.80, 0.52)],
 	]

@@ -196,8 +196,11 @@ func _build_station_north() -> void:
 	SliceMaterials.add_box(anc, null, Vector3(2.85, 0.02, 0.0), Vector3(0.75, 0.04, 75.4), &"hazard", false)
 	# Sweeping Twin-Stack Overlook Balcony deck (butt-joined cleanly at x_local = +18.02, zero overlap!).
 	SliceMaterials.add_box(anc, body, Vector3(37.02, -0.35, 22.0), Vector3(38.0, 0.70, 32.0), &"concrete_floor")
-	# Monumental concrete arrival portal header anchoring the station into STK-0414's south cliff (z_local = -38..-20).
-	SliceMaterials.add_box(anc, body, Vector3(10.2, 8.0, -37.2), Vector3(28.0, 16.0, 1.6), &"industrial_wall")
+	# Monumental concrete arrival portal header anchoring the station into STK-0414's south cliff (z_local = -38..-20),
+	# with a central 9.2 m wide x 7.6 m tall open threshold portal leading north into the Great Belfry of the Continuum (BELFRY-0414)!
+	SliceMaterials.add_box(anc, body, Vector3(1.1, 8.0, -37.2), Vector3(9.0, 16.0, 1.6), &"industrial_wall")
+	SliceMaterials.add_box(anc, body, Vector3(19.3, 8.0, -37.2), Vector3(9.0, 16.0, 1.6), &"industrial_wall")
+	SliceMaterials.add_box(anc, body, Vector3(10.2, 11.82, -37.2), Vector3(9.12, 8.36, 1.6), &"industrial_wall")
 	SliceMaterials.add_box(anc, null, Vector3(10.2, 7.8, 0.0), Vector3(15.6, 0.45, 72.0), &"structure", false)
 	var steel: Array = []
 	for cz: float in [-32.0, -14.0, 4.0, 22.0, 34.0]:
@@ -227,12 +230,12 @@ func _build_station_north() -> void:
 	anc.add_child(bl)
 	SliceMaterials.add_coronas(anc, lamp_glows, 2.4, &"corona_cool")
 
-	SliceMaterials.add_sign(anc, Vector3(10.2, 5.8, -36.25),
-		"STK-0414  ·  SOUTH TERMINAL STA-0414-S\n17.5 KM NORTH OF TWIN-STACK LANDMARK (STK-0412 / STK-0413)",
-		0.015, Color(0.84, 0.94, 1.0), 0.0)
+	SliceMaterials.add_sign(anc, Vector3(10.2, 9.2, -36.25),
+		"STK-0414 · SOUTH TERMINAL STA-0414-S\n↑ NORTH PORTAL: GREAT BELFRY OF THE CONTINUUM (VOID BELL SANCTUM)",
+		0.013, Color(1.0, 0.86, 0.56), 0.0)
 	# Monumental Continuum emblem anchored on STK-0414's south cliff portal (honoring the 14.4 km VD-077-N bond).
-	var ex_emb := ContinuumEmblem.create(2.2, &"copper", &"structure", false)
-	ex_emb.position = Vector3(10.2, 11.4, -36.15)
+	var ex_emb := ContinuumEmblem.create(1.8, &"copper", &"structure", false)
+	ex_emb.position = Vector3(10.2, 13.0, -36.15)
 	anc.add_child(ex_emb)
 
 	# Return dispatch console + Twin-Stack Overlook lore plaque + arrival expedition cache.

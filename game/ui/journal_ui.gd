@@ -21,6 +21,7 @@ const LANDMARKS := [
 	["glass_terrace", "STK-0413 · Glass Curtain Terrace 413-S (+24 m)"],
 	["express_south", "STA-0413-N · Inter-Stack Express Terminal (EXP-077)"],
 	["stk0414", "STK-0414 · South Overlook Terminal (17.5 km North)"],
+	["belfry0414", "BELFRY-0414 · Great Belfry of the Continuum (Void Bell Sanctum)"],
 ]
 
 var is_open := false
@@ -95,8 +96,8 @@ func _build_ui() -> void:
 	v.add_child(sep)
 
 	var help := Label.new()
-	help.text = "CONTROLS:  [WASD] Move  [Shift] Sprint  [E] Interact / Repair / Read  [Tab / I] Pack  [M] Route Diagram  [J] Field Log  [P] Orbital Planet View  [F] Work-Lamp  [F11] Fullscreen  [F5 / F9] Save / Load\n" \
-		+ "PREVIEW JUMPS (Ctrl+key):  1 Home · 2 Street · 3 Vista · 4 Market · ; Highway · 5/6/7 Foundry · 8 Tram · 9 Shaft · Bksp Undercroft · 0 Bridge · - Arrival · = Hydro · [ Preserve · ' Glass · . Express · / STK-0414 · ] Crust"
+	help.text = "CONTROLS:  [WASD] Move  [Shift] Sprint  [E] Interact / Repair / Read  [Tab / I] Pack  [M] Route Diagram  [J] Field Log  [P] Orbital Planet View  [F] Work-Lamp  [Ctrl+B] Toll Void Bell  [F11] Fullscreen  [F5 / F9] Save / Load\n" \
+		+ "PREVIEW JUMPS (Ctrl+key):  1 Home · 2 Street · 3 Vista · 4 Market · ; Highway · 5/6/7 Foundry · 8 Tram · 9 Shaft · Bksp Undercroft · 0 Bridge · - Arrival · = Hydro · [ Preserve · ' Glass · . Express · / STK-0414 · \\ Void Bell Belfry · ] Crust"
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD
 	help.add_theme_font_size_override(&"font_size", 8)
 	help.add_theme_color_override(&"font_color", Color(0.72, 0.64, 0.50))

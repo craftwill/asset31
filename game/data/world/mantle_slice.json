@@ -93,7 +93,8 @@
     { "id": "EL-GAP-3", "kind": "elevator_shaft", "position": [5350, 41000, -6800], "size": 34, "depth": 6000, "height": 4500, "cars": 3 },
     { "id": "EL-GAP-4", "kind": "elevator_shaft", "position": [6750, 41000, -11200], "size": 34, "depth": 6000, "height": 4500, "cars": 2 },
     { "id": "EXP-077", "kind": "inter_stack_express" },
-    { "id": "STK-0414", "kind": "distant_stack", "position": [6200, 41000, -17500], "width": 5600, "depth": 5600, "below_depth": 8000, "above_height": 8000, "palette": "cool", "silhouette": 0 },
+    { "id": "BELFRY-0414", "kind": "void_bell_sanctum" },
+    { "id": "STK-0414", "kind": "distant_stack", "position": [6200, 41000, -18100], "width": 5600, "depth": 5600, "below_depth": 8000, "above_height": 8000, "palette": "cool", "silhouette": 0 },
     { "id": "STK-0415", "kind": "distant_stack", "position": [4600, 41000, 18500], "width": 5400, "depth": 5400, "below_depth": 8000, "above_height": 7600, "palette": "warm", "silhouette": 1, "viaduct_dir": [0.05, -1.0], "viaduct_len": 5200 },
     { "id": "STK-0416", "kind": "distant_stack", "position": [22800, 41000, -14200], "width": 5800, "depth": 5800, "below_depth": 7500, "above_height": 7500, "palette": "cool", "silhouette": 2 },
     { "id": "STK-0417", "kind": "distant_stack", "position": [-14800, 41000, -16200], "width": 5200, "depth": 5200, "below_depth": 7500, "above_height": 7500, "palette": "warm", "silhouette": 1 }
@@ -109,6 +110,7 @@
     { "profile": "crust", "box": [2400, -100, -900, 4100, 450, 700] },
     { "profile": "shaft", "box": [3100, 450, -340, 3420, 41100, -20] },
     { "profile": "edge", "box": [2740, 40990, -400, 3040, 41450, 400] },
+    { "profile": "shaft", "box": [5750, 38800, -15200, 6230, 42400, -14718] },
     { "profile": "arrival", "box": [5950, 40990, -14740, 6060, 41040, -14620] },
     { "profile": "gap", "box": [5900, 40950, -14760, 6060, 41100, -240] },
     { "profile": "gap", "box": [3040, 39000, -3000, 6040, 43000, 3000] },

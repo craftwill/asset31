@@ -132,6 +132,13 @@ func set_mood(mood: String, delta: float, instant := false) -> void:
 		tgt_amb_e = 1.05
 		tgt_fog_d = 0.00055
 		floor_logical_y = 41000.0
+	elif mood == "belfry":
+		tgt_bg = Color(0.24, 0.155, 0.088)
+		tgt_fog = Color(0.40, 0.26, 0.14)
+		tgt_amb = Color(0.48, 0.35, 0.22)
+		tgt_amb_e = 0.92
+		tgt_fog_d = 0.0026
+		floor_logical_y = 41000.0
 	elif mood == "gap":
 		tgt_bg = Color(0.092, 0.056, 0.034)
 		tgt_fog = Color(0.195, 0.115, 0.060)

@@ -315,28 +315,36 @@ func _tick_void_bell(delta: float) -> void:
 ## Strikes The Void Bell deep within the megastructure:
 ## 1) Pitched-down colossal metallic gong in 3D space across the chasm (longer tail + immense scale)
 ## 2) Delayed octave-lower structural sub-resonance so the entire megastructure quietly vibrates.
+## 3) Triggers the physical 19 m spherical clapper swing & golden shockwave inside BELFRY-0414.
 func trigger_void_bell() -> void:
 	if _bell_stream == null or _listener == null:
 		return
 	var base_pitch := _rng.randf_range(0.79, 0.87)
-	# Place the distant sacred source ~1,200 m out across the abyss so stereo imaging feels vast.
-	var az := _rng.randf_range(-0.9, 0.9) + (0.0 if _rng.randf() < 0.5 else PI)
-	var dir := Vector3(sin(az), _rng.randf_range(-0.35, 0.15), -cos(az)).normalized()
+	var lp := WorldOrigin.to_logical(_listener.global_position)
 	var s := AudioStreamPlayer3D.new()
 	s.stream = _bell_stream
 	s.bus = &"VoidBell"
 	s.unit_size = 950.0
 	s.max_distance = 14000.0
-	s.volume_db = 0.0
+	s.volume_db = 2.0 if lp[2] < -14400.0 else 0.0
 	s.pitch_scale = base_pitch
 	s.attenuation_filter_cutoff_hz = 5000.0
 	add_child(s)
-	s.global_position = _listener.global_position + dir * 1200.0
+	if lp[2] < -14400.0:
+		# Inside STK-0414 / BELFRY-0414: sound radiates directly from the suspended 106 m Void Bell!
+		s.global_position = WorldOrigin.to_render(5982.2, 41006.0, -14952.0)
+	else:
+		# Across the chasm: project 1,200 m out toward the distant Great Belfry of STK-0414.
+		var az := _rng.randf_range(-0.9, 0.9) + (0.0 if _rng.randf() < 0.5 else PI)
+		var dir := Vector3(sin(az), _rng.randf_range(-0.35, 0.15), -cos(az)).normalized()
+		s.global_position = _listener.global_position + dir * 1200.0
 	s.play()
 	s.finished.connect(s.queue_free)
 	# Queue the deep octave-lower structural vibration layer 0.38 s after impact.
 	_bell_sub_pitch = base_pitch * 0.62
 	_bell_sub_pending = 0.38
+	if get_tree() != null:
+		get_tree().call_group(&"void_bell_sanctum", &"on_bell_struck")
 
 
 func _play_void_bell_sub_layer(pitch: float) -> void:
