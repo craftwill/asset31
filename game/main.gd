@@ -945,6 +945,9 @@ func _handle_cmdline() -> void:
 		elif arg == "--showcase":
 			_run_tour(SHOWCASE, 0.22)
 			return
+		elif arg == "--teaser":
+			_run_tour(TEASER, 0.8)
+			return
 		elif arg.begins_with("--motion="):
 			_run_motion(arg.get_slice("=", 1))
 			return
@@ -1523,6 +1526,24 @@ const SHOWCASE := [
 	["Ecological Preserve 413-B", [6600.0, 59100.08, -836.0], 2.2, [], 0.0, [[0.0, 4.0, 10.0], [2.2, 4.0, 40.0]]],
 ]
 
+# ~80 s teaser for people: slow, no captions, and it stops short of the rewards
+# (no crust, no hydroponic bay, no preserve; the frozen floor is only glimpsed).
+const TEASER := [
+	["", [-1490.3, 41000.05, 112.7], 7.0, [], 0.0, [[0.0, 180.0, -8.0], [3.5, 150.0, -4.0], [7.0, 122.0, 0.0]]],
+	["", [-1476.0, 41000.0, 4.0], 7.0, [[-1440.0, 4.0]], 1.8, [[0.0, -90.0, 4.0], [3.5, -70.0, 10.0], [7.0, -100.0, 6.0]]],
+	["", [1858.0, 41000.0, -8.0], 6.0, [], 0.0, [[0.0, -128.0, 14.0], [6.0, -100.0, 8.0]]],
+	["", [4300.0, 41000.0, 0.0], 9.0, [[4400.0, 0.0]], 1.8, [[0.0, -90.0, 3.0], [4.0, -55.0, -24.0], [7.0, -80.0, -8.0], [9.0, -90.0, 2.0]]],
+	["", [3271.5, 34000.05, -179.0], 6.0, [], 0.0, [[0.0, 90.0, -6.0], [6.0, 90.0, -34.0]], 0.0, "deep"],
+	["", [7706.5, 41000.05, 349.6], 9.0, [[7692.5, 349.6]], 1.6, [[0.0, 90.0, 2.0], [5.0, 90.0, 0.0], [9.0, 60.0, -4.0]]],
+	["", [7705.0, 41000.05, 1130.0], 8.0, [[7705.0, 1190.0]], 1.8, [[0.0, 180.0, 10.0], [4.0, 170.0, 4.0], [8.0, 185.0, 2.0]]],
+	["", [7705.0, 41000.05, 2345.0], 7.0, [[7705.0, 2385.0]], 1.8, [[0.0, -165.0, 10.0], [7.0, -138.0, 20.0]]],
+	["", [7700.0, 41000.05, 2550.0], 5.0, [], 0.0, [[0.0, 155.0, 0.0], [5.0, 118.0, 3.0]]],
+	["", [7700.0, 41000.05, 2999.2], 9.0, [], 0.0, [[0.0, 180.0, -4.0], [4.0, 176.0, -16.0], [9.0, 166.0, -30.0]], 0.0, "bolt"],
+	["", [7712.0, 52000.05, 3004.0], 5.0, [], 0.0, [[0.0, 180.0, -24.0], [5.0, 180.0, -4.0]], 0.0, "brink"],
+	["", [7705.0, 59100.05, 2950.0], 3.4, [[7705.0, 2900.0]], 1.8, [[0.0, 0.0, 2.0], [3.4, 0.0, 0.0]]],
+	["ASSET 31", [7705.0, 59100.05, 2940.0], 3.6, [], 0.0, [[0.0, 0.0, 0.0], [3.6, 0.0, 0.0]], 0.0, "title"],
+]
+
 const TOUR := [
 	["Home shelter  (ref 000s)", [-1490.3, 41000.05, 112.7], 12.0, [[-1491.0, 112.9], [-1494.5, 112.9], [-1499.0, 112.9]], 1.6,
 		[[0.0, 180.0, -6.0], [3.0, 122.0, -2.0], [5.5, 165.0, -14.0], [7.5, 92.0, 0.0], [12.0, 90.0, 0.0]], 7.5],
@@ -1568,7 +1589,7 @@ func _tour_reset_transports() -> void:
 
 
 ## Stages a transport mid-journey (or a lightning stroke) for one showcase shot.
-func _tour_action(action: String, start: Array) -> void:
+func _tour_action(action: String, start: Array, segs_are_showcase := true) -> void:
 	match action:
 		"deep", "brink":
 			var want := "EL-DEEP-00" if action == "deep" else "EL-0413-S"
@@ -1593,7 +1614,7 @@ func _tour_action(action: String, start: Array) -> void:
 		"bolt":
 			var abyss := get_node_or_null(^"AbyssFloor") as AbyssFloor
 			if abyss != null:
-				abyss.strike_soon(0.7, 180.0)
+				abyss.strike_soon(0.7 if segs_are_showcase else 5.2, 180.0)
 
 
 func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
@@ -1617,6 +1638,14 @@ func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 	caption.add_theme_constant_override(&"shadow_offset_x", 1)
 	caption.add_theme_constant_override(&"shadow_offset_y", 1)
 	layer.add_child(caption)
+	var title := Label.new()
+	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override(&"font_size", 40)
+	title.add_theme_color_override(&"font_color", Color(1.0, 0.88, 0.65))
+	title.visible = false
+	layer.add_child(title)
 	for seg: Array in segs:
 		var start: Array = seg[1]
 		var dur: float = seg[2]
@@ -1632,12 +1661,18 @@ func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 			_tour_reset_transports()
 		_place_player(start, deg_to_rad(yaw0), deg_to_rad(pitch0))
 		if seg.size() > 7:
-			_tour_action(String(seg[7]), start)
+			_tour_action(String(seg[7]), start, segs == SHOWCASE)
 		if segs != TOUR and ambience != null:
 			# Short shots: cut straight to each place's own ambience instead of fading into it.
 			ambience._apply_profile(ambience._profile_at_listener(), true)
 		player.speed_override = float(seg[4])
 		caption.text = seg[0]
+		var is_title := seg.size() > 7 and String(seg[7]) == "title"
+		if is_title:
+			# End card: the name over black.
+			caption.text = ""
+			title.text = String(seg[0])
+			title.visible = true
 		var wi := 0
 		var t := 0.0
 		var yaw := deg_to_rad(yaw0)
@@ -1645,6 +1680,9 @@ func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 			var dt := get_process_delta_time()
 			t += dt
 			fade.color.a = clampf(1.0 - t / fade_t, 0.0, 1.0) + clampf((t - (dur - fade_t)) / fade_t, 0.0, 1.0)
+			if is_title:
+				fade.color.a = 1.0
+				title.modulate.a = clampf(t / 1.0, 0.0, 1.0) * clampf((dur - t) / 0.8, 0.0, 1.0)
 			var lp := WorldOrigin.to_logical(player.position)
 			var dir := Vector3.ZERO
 			if wi < walk.size() and t >= walk_delay:
