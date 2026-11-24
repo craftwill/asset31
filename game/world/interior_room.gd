@@ -408,10 +408,10 @@ func _dwelling() -> void:
 	# Washing line across the room.
 	if rng.randf() < 0.65:
 		var ls := rng.randf_range(2.2, maxf(2.3, d - 1.6))
-		_r(0.0, w, 2.3, 2.315, ls - 0.008, ls + 0.008, &"structure")
+		_r(0.0, w, 2.9, 2.915, ls - 0.008, ls + 0.008, &"structure")
 		for i in 2 + rng.randi() % 5:
 			var ct := rng.randf_range(0.5, w - 1.0)
-			_r(ct, ct + rng.randf_range(0.4, 0.8), 2.3 - rng.randf_range(0.5, 0.95), 2.3, ls - 0.012, ls + 0.012, _pick(CLOTHS))
+			_r(ct, ct + rng.randf_range(0.4, 0.8), 2.9 - rng.randf_range(0.45, 0.9), 2.9, ls - 0.012, ls + 0.012, _pick(CLOTHS))
 	for i in rng.randi() % 3:
 		_crate(rng.randf_range(0.4, w - 0.4), rng.randf_range(0.4, 1.4), rng.randf_range(0.4, 0.6))
 
@@ -682,13 +682,14 @@ func _laundry() -> void:
 	# Lines of washing right across the room, at different heights.
 	var ls := rng.randf_range(2.3, 2.8)
 	while ls < d - 1.1:
-		var ly := rng.randf_range(2.25, 2.6)
+		# High enough to walk under: the lowest hem stays above 1.95 m.
+		var ly := rng.randf_range(2.85, 3.0)
 		_r(0.0, w, ly, ly + 0.015, ls - 0.008, ls + 0.008, &"structure")
 		var ct := rng.randf_range(0.2, 0.8)
 		while ct < w - 0.9:
 			var cw := rng.randf_range(0.4, 0.95)
 			if rng.randf() < (0.35 if ruin else 0.8):
-				_r(ct, ct + cw, ly - rng.randf_range(0.5, 1.15), ly, ls - 0.012, ls + 0.012, _pick(CLOTHS))
+				_r(ct, ct + cw, ly - rng.randf_range(0.45, 0.88), ly, ls - 0.012, ls + 0.012, _pick(CLOTHS))
 			ct += cw + rng.randf_range(0.08, 0.5)
 		ls += rng.randf_range(0.9, 1.5)
 	# Baskets.

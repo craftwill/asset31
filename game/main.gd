@@ -1509,7 +1509,7 @@ const SHOWCASE := [
 	["Foundry hall", [1858.0, 41000.0, -8.0], 2.2, [], 0.0, [[0.0, -122.0, 12.0], [2.2, -100.0, 10.0]]],
 	["Deep core elevator EL-DEEP-00: 41 km down", [3271.5, 30000.05, -179.0], 2.8, [], 0.0, [[0.0, 90.0, -8.0], [2.8, 90.0, -30.0]], 0.0, "deep"],
 	["Planetary crust, 0 m", [3262.0, 0.08, -176.0], 1.8, [], 0.0, [[0.0, 42.0, 10.0], [1.8, 60.0, 14.0]]],
-	["The 3 km bridge between the twin stacks", [4300.0, 41000.0, 0.0], 3.0, [[4400.0, 0.0]], 4.6, [[0.0, -90.0, 2.0], [1.4, -60.0, -14.0], [3.0, -90.0, 2.0]]],
+	["The 3 km bridge between the twin stacks", [4300.0, 41000.0, 0.0], 3.0, [[4400.0, 0.0]], 4.6, [[0.0, -90.0, -10.0], [3.0, -90.0, 30.0]]],
 	["Inter-Stack Express station", [5988.5, 41000.08, -264.0], 1.6, [], 0.0, [[0.0, 26.0, 2.0], [1.6, 10.0, 2.0]]],
 	["Aboard EXP-077 to the next stack, 396 km/h", [5980.0, 41000.05, -3024.0], 2.4, [], 0.0, [[0.0, 0.0, 0.0], [2.4, -30.0, -4.0]], 0.0, "train"],
 	["STK-0413 arrival: the glass terrace", [6922.0, 41028.05, 110.0], 2.0, [], 0.0, [[0.0, 112.0, -2.0], [2.0, 95.0, 0.0]]],
@@ -1532,7 +1532,7 @@ const TEASER := [
 	["", [-1490.3, 41000.05, 112.7], 7.0, [], 0.0, [[0.0, 180.0, -8.0], [3.5, 150.0, -4.0], [7.0, 122.0, 0.0]]],
 	["", [-1476.0, 41000.0, 4.0], 7.0, [[-1440.0, 4.0]], 1.8, [[0.0, -90.0, 4.0], [3.5, -70.0, 10.0], [7.0, -100.0, 6.0]]],
 	["", [1858.0, 41000.0, -8.0], 6.0, [], 0.0, [[0.0, -128.0, 14.0], [6.0, -100.0, 8.0]]],
-	["", [4300.0, 41000.0, 0.0], 9.0, [[4400.0, 0.0]], 1.8, [[0.0, -90.0, 3.0], [4.0, -55.0, -24.0], [7.0, -80.0, -8.0], [9.0, -90.0, 2.0]]],
+	["", [4300.0, 41000.0, 0.0], 9.0, [[4400.0, 0.0]], 1.8, [[0.0, -90.0, -16.0], [9.0, -90.0, 38.0]]],
 	["", [3271.5, 34000.05, -179.0], 6.0, [], 0.0, [[0.0, 90.0, -6.0], [6.0, 90.0, -34.0]], 0.0, "deep"],
 	["", [7706.5, 41000.05, 349.6], 9.0, [[7692.5, 349.6]], 1.6, [[0.0, 90.0, 2.0], [5.0, 90.0, 0.0], [9.0, 60.0, -4.0]]],
 	["", [7705.0, 41000.05, 1130.0], 8.0, [[7705.0, 1190.0]], 1.8, [[0.0, 180.0, 10.0], [4.0, 170.0, 4.0], [8.0, 185.0, 2.0]]],
@@ -1541,7 +1541,7 @@ const TEASER := [
 	["", [7700.0, 41000.05, 2999.2], 9.0, [], 0.0, [[0.0, 180.0, -4.0], [4.0, 176.0, -16.0], [9.0, 166.0, -30.0]], 0.0, "bolt"],
 	["", [7712.0, 52000.05, 3004.0], 5.0, [], 0.0, [[0.0, 180.0, -24.0], [5.0, 180.0, -4.0]], 0.0, "brink"],
 	["", [7705.0, 59100.05, 2950.0], 3.4, [[7705.0, 2900.0]], 1.8, [[0.0, 0.0, 2.0], [3.4, 0.0, 0.0]]],
-	["ASSET 31", [7705.0, 59100.05, 2940.0], 3.6, [], 0.0, [[0.0, 0.0, 0.0], [3.6, 0.0, 0.0]], 0.0, "title"],
+	["ASSET 31", [7705.0, 59100.05, 2940.0], 7.0, [], 0.0, [[0.0, 0.0, 0.0], [7.0, 0.0, 0.0]], 0.0, "title"],
 ]
 
 const TOUR := [
@@ -1646,6 +1646,15 @@ func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 	title.add_theme_color_override(&"font_color", Color(1.0, 0.88, 0.65))
 	title.visible = false
 	layer.add_child(title)
+	var credit := Label.new()
+	credit.set_anchors_preset(Control.PRESET_FULL_RECT)
+	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	credit.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	credit.add_theme_font_size_override(&"font_size", 11)
+	credit.add_theme_color_override(&"font_color", Color(0.82, 0.76, 0.66))
+	credit.text = "A fan-made playable recreation.  World and original video:\n\"Life Inside a Planet-Sized Megastructure\" by Otherside Narrations (YouTube).\n "
+	credit.visible = false
+	layer.add_child(credit)
 	for seg: Array in segs:
 		var start: Array = seg[1]
 		var dur: float = seg[2]
@@ -1669,10 +1678,15 @@ func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 		caption.text = seg[0]
 		var is_title := seg.size() > 7 and String(seg[7]) == "title"
 		if is_title:
-			# End card: the name over black.
+			# End card: the name over the planet seen from orbit, with the credit.
 			caption.text = ""
 			title.text = String(seg[0])
 			title.visible = true
+			credit.visible = true
+			layer.layer = 60
+			if ambience != null:
+				ambience._apply_profile("gap", true)
+			_open_planet_view(false)
 		var wi := 0
 		var t := 0.0
 		var yaw := deg_to_rad(yaw0)
@@ -1681,8 +1695,8 @@ func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 			t += dt
 			fade.color.a = clampf(1.0 - t / fade_t, 0.0, 1.0) + clampf((t - (dur - fade_t)) / fade_t, 0.0, 1.0)
 			if is_title:
-				fade.color.a = 1.0
-				title.modulate.a = clampf(t / 1.0, 0.0, 1.0) * clampf((dur - t) / 0.8, 0.0, 1.0)
+				title.modulate.a = clampf((t - 1.2) / 1.2, 0.0, 1.0)
+				credit.modulate.a = clampf((t - 2.6) / 1.2, 0.0, 1.0)
 			var lp := WorldOrigin.to_logical(player.position)
 			var dir := Vector3.ZERO
 			if wi < walk.size() and t >= walk_delay:
