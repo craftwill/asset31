@@ -101,6 +101,20 @@ func _build(site: Dictionary) -> void:
 	var p_cx := tx0 + p_len * 0.5
 	SliceMaterials.add_box(self, body, Vector3(p_cx, TERRACE_Y + 0.65, tz0 + 0.6), Vector3(p_len, 1.3, 1.2), &"terrace_concrete")
 
+	# Freight lift at the east end of the terrace, so the far end is not a dead end
+	# 24 m up: board from the terrace (or from underneath it at street level).
+	var east_lift := Lift.new()
+	east_lift.name = "TerraceEastLift"
+	east_lift.position = Vector3(tx1 + 1.62, 0.0, tzm + 6.0)
+	east_lift.top_height = TERRACE_Y
+	east_lift.start_at_top = true
+	add_child(east_lift)
+	SliceMaterials.add_box(self, null, Vector3(tx1 - 1.2, TERRACE_Y + 2.5, tzm + 4.3), Vector3(0.12, 5.0, 0.12), &"structure", false)
+	SliceMaterials.add_box(self, null, Vector3(tx1 - 1.2, TERRACE_Y + 4.9, tzm + 4.3), Vector3(0.5, 0.2, 0.5), &"lamp_cool", false)
+	var lift_lamp := SliceMaterials.make_lamp_light(SliceMaterials.COOL, 1.6, 14.0)
+	lift_lamp.position = Vector3(tx1 - 1.2, TERRACE_Y + 4.5, tzm + 4.3)
+	add_child(lift_lamp)
+
 	# 3. Colossal 540 m wide x 430 m tall Translucent Silver-Grid Curtain Wall (z = tz1 + 2 = 180).
 	#    No thick black foreground columns — the analytical silver-gray grid shader defines the giant glass facade!
 	var wall_z := tz1 + 2.0

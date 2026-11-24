@@ -17,6 +17,10 @@ const SAVE_PATH := "user://asset31_save.json"
 const LEGACY_SAVE_REL := "Godot/app_userdata/Asset31/asset31_save.json"
 const RETRO_POST := preload("res://shaders/retro_post.gdshader")
 const STREAM_INTERVAL := 0.25
+## STK-0413 top floor (frozen plate, Hydroponic Bay 413-A, Preserve 413-B).
+const UPPER_LY := 59100.0
+## A Mantle day runs from 00:00:00 to 24:39:35.
+const DAY_SECONDS := 24.0 * 3600.0 + 39.0 * 60.0 + 35.0
 
 # name (reference frame), logical position, yaw deg, pitch deg
 const SHOTS := [
@@ -35,9 +39,9 @@ const SHOTS := [
 	["175s_undercroft", [3260.0, 40780.05, -187.4], 0.0, -42.0],
 	["bridge_midspan", [4524.0, 41000.0, 1.0], -78.0, 4.0],
 	["tram_spur", [3045.5, 41000.05, 1.2], -132.0, -4.0],
-	["350s_hydroponics", [6253.0, 41000.05, -112.0], 10.0, 2.0],
-	["450s_preserve_up", [6600.0, 41000.08, -836.0], 0.0, 62.0],
-	["475s_preserve", [6600.0, 41000.08, -836.0], 4.0, 10.0],
+	["350s_hydroponics", [6253.0, 59100.05, -112.0], 10.0, 2.0],
+	["450s_preserve_up", [6600.0, 59100.08, -836.0], 0.0, 62.0],
+	["475s_preserve", [6600.0, 59100.08, -836.0], 4.0, 10.0],
 	["000m_crust", [3262.0, 0.08, -176.0], 42.0, 10.0],
 	["375s_highway", [-458.2, 41016.05, 0.0], -90.0, -11.0],
 	["400s_glass_terrace", [6922.0, 41028.05, 110.0], 112.0, -2.0],
@@ -60,12 +64,19 @@ const TELEPORTS := {
 	KEY_9: ["9 · Mining Shaft 77-N Hub (175s)", [3257.0, 41000.0, -185.0], -126.0, -18.0],
 	KEY_0: ["0 · Bridge Mid-Span Shelter (1.5 km)", [4536.0, 41000.0, 0.0], -78.0, 4.0],
 	KEY_MINUS: ["- · STK-0413 Arrival", [6105.0, 41000.0, 4.0], -90.0, 10.0],
-	KEY_EQUAL: ["= · Hydroponic Bay 413-A (350s · 700×600 m)", [6253.0, 41000.05, -112.0], 10.0, 2.0],
+	KEY_EQUAL: ["= · Hydroponic Bay 413-A (350s · 700×600 m)", [6253.0, 59100.05, -112.0], 10.0, 2.0],
 	KEY_BACKSPACE: ["Bksp · Shaft Undercroft 76-B (-220 m)", [3260.0, 40780.05, -183.0], 0.0, -14.0],
-	KEY_BRACKETLEFT: ["[ · Ecological Preserve 413-B (475s · 1 km × 820 m)", [6600.0, 41000.08, -836.0], 4.0, 10.0],
+	KEY_BRACKETLEFT: ["[ · Ecological Preserve 413-B (475s · 1 km × 820 m)", [6600.0, 59100.08, -836.0], 4.0, 10.0],
 	KEY_BRACKETRIGHT: ["] · Asset 31 Planetary Crust (0 m)", [3262.0, 0.08, -176.0], 42.0, 10.0],
 	KEY_SEMICOLON: ["; · Megablock Highway Overpass (375s)", [-458.2, 41016.05, 0.0], -90.0, -11.0],
 	KEY_APOSTROPHE: ["' · Misty Glass Terrace (400s)", [6922.0, 41028.05, 110.0], 112.0, -2.0],
+	KEY_COMMA: [", · STK-0413 Deep Residential (enterable rooms)", [7705.0, 41000.05, 312.5], 0.0, 2.0],
+	KEY_K: ["K · Squatters' Works 413-U", [7404.5, 41000.05, 627.0], 200.0, 6.0],
+	KEY_L: ["L · The Barren Blocks (abandoned extremity)", [7705.0, 41000.05, 1010.0], 180.0, 3.0],
+	KEY_U: ["U · Return Line 413-S (never-built extremity)", [7705.0, 41000.05, 2550.0], 150.0, 2.0],
+	KEY_P: ["P · The Empty Plates (between city and steel)", [7705.0, 41000.05, 1760.0], 180.0, 2.0],
+	KEY_Y: ["Y · The Unclosed Edge (void) & Brink Lift", [7705.0, 41000.05, 2975.0], 180.0, -4.0],
+	KEY_T: ["T · Top Floor, Unheated (59,100 m)", [7705.0, 59100.05, 2985.0], 0.0, 0.0],
 	KEY_PERIOD: [". · EXP-077 Express Terminal (STA-0413-N)", [5988.5, 41000.08, -264.0], 26.0, 2.0],
 	KEY_SLASH: ["/ · STK-0414 South Overlook (17.5 km North)", [6016.0, 41000.08, -14648.0], 185.0, 2.0],
 	KEY_BACKSLASH: ["\\ · Great Belfry of the Continuum (Void Bell Sanctum)", [6007.7, 41000.08, -14874.0], 15.0, 10.0],
@@ -92,9 +103,12 @@ var planet_open := false
 var post_material: ShaderMaterial
 var debug_label: Label
 var _stream_timer := 0.0
+var clock_day := 1
+var clock_seconds := 6.0 * 3600.0
 var _hud_timer := 0.0
 var _retro_mode := 1
 var _autopilot := false
+var _extra_shots: Array = []
 var _route: Array = []
 var _route_i := 0
 var _autopilot_log_timer := 0.0
@@ -144,6 +158,20 @@ func _ready() -> void:
 			add_child(InterStackExpress.build())
 		elif st.kind == "void_bell_sanctum":
 			add_child(VoidBellSanctum.build())
+		elif st.kind == "brink_lift":
+			add_child(DeepRelayLift.build_custom({
+				"id": st.id, "x": st.position[0], "z": st.position[2],
+				"bottom": float(st.position[1]) + 0.05, "top": float(st.top) + 0.05,
+				"title": "BRINK LIFT",
+				"bottom_name": "Floor 77 Unclosed Edge (41,000 m)",
+				"top_name": "Top Floor, Unheated (59,100 m)",
+				"strata": [[57000.0, "TOP FLOORS · UNHEATED"], [50000.0, "UPPER MANTLE · SEALED"], [43000.0, "STK-0413 SOUTH FACE · OPEN"], [0.0, "FLOOR 77 · THE BRINK"]],
+			}))
+		elif st.kind == "frozen_floor":
+			for sd: Dictionary in world_def.stacks:
+				if sd.id == st.stack:
+					add_child(FrozenFloor.build(st, sd))
+	add_child(AbyssFloor.build(world_def))
 	_spawn_player()
 	_setup_gameplay()
 	atmosphere.follow(player)
@@ -329,7 +357,7 @@ func _on_relay_console_activated(console: RelayConsole) -> void:
 	if not relay.powered:
 		if player_inventory.consume_item_id("salvaged_relay"):
 			relay.power_on()
-			hud.show_toast("Salvaged Relay installed — EL-DEEP-00 (41 km Descent) ONLINE", 3.5)
+			hud.show_toast("Salvaged Relay installed — %s ONLINE" % relay.relay_id, 3.5)
 		else:
 			hud.show_toast("Needs Salvaged Relay (check Undercroft Cache, Bridge Shelter, or Arrival Locker)", 3.5)
 		return
@@ -544,10 +572,13 @@ func _physics_process(delta: float) -> void:
 func _atmosphere_mood(lp: PackedFloat64Array) -> String:
 	if lp[1] < 600.0:
 		return "crust"
-	if lp[0] >= 6120.0 and lp[0] <= 7080.0 and lp[2] >= -1700.0 and lp[2] <= -700.0 and lp[1] >= 40960.0 and lp[1] <= 41860.0:
+	# STK-0413 top floor (59,100 m): the warm bay and preserve, the frozen plate around them.
+	if lp[0] >= 6120.0 and lp[0] <= 7080.0 and lp[2] >= -1700.0 and lp[2] <= -700.0 and lp[1] >= UPPER_LY - 40.0 and lp[1] <= UPPER_LY + 860.0:
 		return "preserve"
-	if lp[0] >= 6140.0 and lp[0] <= 6840.0 and lp[2] >= -700.0 and lp[2] <= -100.0 and absf(lp[1] - 41000.0) < 40.0:
+	if lp[0] >= 6140.0 and lp[0] <= 6840.0 and lp[2] >= -700.0 and lp[2] <= -100.0 and absf(lp[1] - UPPER_LY) < 40.0:
 		return "hydroponics"
+	if lp[1] >= UPPER_LY - 300.0 and lp[0] >= 5900.0 and lp[0] <= 12300.0 and absf(lp[2]) <= 3300.0:
+		return "frozen"
 	if lp[0] >= 6340.0 and lp[0] <= 6950.0 and lp[2] >= 95.0 and lp[2] <= 430.0 and lp[1] >= 40990.0 and lp[1] <= 41620.0:
 		return "glass_terrace"
 	if lp[0] >= 5750.0 and lp[0] <= 6230.0 and lp[2] < -14720.0 and lp[2] >= -15200.0 and lp[1] >= 40500.0:
@@ -556,6 +587,19 @@ func _atmosphere_mood(lp: PackedFloat64Array) -> String:
 		return "gap"
 	if lp[0] >= 2850.0 and lp[0] <= 6220.0 and absf(lp[2]) <= 450.0 and lp[1] >= 40500.0:
 		return "gap"
+	# STK-0413 south extremities: the barren blocks, then the never-built blue.
+	if lp[0] >= 6040.0 and lp[0] <= 12120.0 and lp[1] >= 40000.0 and lp[1] <= 41950.0:
+		if lp[2] >= 2962.0 and lp[2] <= 3900.0:
+			return "brink"
+		if lp[2] >= 2300.0:
+			return "unbuilt"
+		if lp[2] >= 1720.0:
+			return "plain"
+		if lp[2] >= 930.0:
+			return "barren"
+	# Riding the brink lift up the open south face.
+	if lp[1] > 41950.0 and lp[1] < UPPER_LY - 300.0 and absf(lp[0] - 7712.0) < 80.0 and absf(lp[2] - 3004.0) < 80.0:
+		return "brink"
 	return "default"
 
 
@@ -572,9 +616,9 @@ func _check_landmark_discovery(lp: PackedFloat64Array) -> void:
 		id = "stk0414"; label = "STK-0414 South Terminal (17.5 km North)"
 	elif lp[0] >= 5950.0 and lp[0] <= 6040.0 and lp[2] <= -230.0 and lp[2] >= -340.0:
 		id = "express_south"; label = "STA-0413-N Inter-Stack Express Terminal"
-	elif lp[0] >= 6120.0 and lp[0] <= 7080.0 and lp[2] >= -1700.0 and lp[2] <= -700.0:
+	elif lp[1] > UPPER_LY - 60.0 and lp[0] >= 6120.0 and lp[0] <= 7080.0 and lp[2] >= -1700.0 and lp[2] <= -700.0:
 		id = "preserve"; label = "Ecological Preserve 413-B"
-	elif lp[0] >= 6140.0 and lp[0] <= 6840.0 and lp[2] >= -700.0 and lp[2] <= -100.0:
+	elif lp[1] > UPPER_LY - 60.0 and lp[0] >= 6140.0 and lp[0] <= 6840.0 and lp[2] >= -700.0 and lp[2] <= -100.0:
 		id = "hydroponics"; label = "Hydroponic Bay 413-A"
 	elif lp[0] >= 6340.0 and lp[0] <= 6940.0 and lp[2] >= 110.0 and lp[2] <= 430.0:
 		id = "glass_terrace"; label = "Glass Curtain Terrace 413-S"
@@ -603,6 +647,13 @@ func _environment_condition(lp: PackedFloat64Array) -> String:
 	# Asset 31 Planetary Crust Survey Shelter Booth (0 m).
 	if absf(y) < 12.0 and x >= 3249.0 and x <= 3257.0 and z >= -192.0 and z <= -186.0:
 		return "SHELTER"
+	# STK-0413 unheated top floor: lethal cold except the bay, the preserve and two way-huts.
+	if y > UPPER_LY - 60.0 and x >= 5900.0 and x <= 12300.0 and absf(z) <= 3300.0:
+		if x >= 6120.0 and x <= 7080.0 and z >= -1700.0 and z <= -100.0 and y < UPPER_LY + 860.0:
+			return "SHELTER"
+		if (absf(x - 7716.0) < 2.6 and absf(z - 1520.0) < 2.1) or (absf(x - 7688.0) < 2.6 and absf(z + 52.0) < 2.1):
+			return "SHELTER"
+		return "EXPOSED"
 	if absf(y - 41000.0) > 40.0:
 		return ""
 	# Home shelter room.
@@ -619,20 +670,29 @@ func _environment_condition(lp: PackedFloat64Array) -> String:
 	if x >= 4546.0 and x <= 4558.0 and z >= -10.8 and z <= -6.0:
 		return "SHELTER"
 	# Hydroponic Bay 413-A, Ecological Preserve 413-B, Glass Curtain Terrace 413-S & EXP-077 terminals/train.
-	if (lp[0] >= 6120.0 and lp[0] <= 7080.0 and lp[2] >= -1700.0 and lp[2] <= -100.0) \
-			or (lp[0] >= 6340.0 and lp[0] <= 6940.0 and lp[2] >= 110.0 and lp[2] <= 430.0) \
+	if (lp[0] >= 6340.0 and lp[0] <= 6940.0 and lp[2] >= 110.0 and lp[2] <= 430.0) \
 			or (lp[0] >= 5965.0 and lp[0] <= 6050.0 and lp[2] <= -230.0 and lp[2] >= -14750.0):
 		return "SHELTER"
 	# Radiant heat near the molten crucible pour on the direct foundry floor.
 	if x >= 1855.0 and x <= 1945.0 and z >= -16.0 and z <= 36.0:
 		return "HEAT"
+	# Never-built extremity of STK-0413: bitter out on the plates, warm against the pipe.
+	if x >= 6080.0 and x <= 12080.0 and z >= 1750.0 and z <= 3010.0:
+		return "SHELTER" if absf(z - 2562.5) < 4.5 else "EXPOSED"
 	# Exposed 3 km inter-stack bridge span.
 	if x >= 3045.0 and x <= 6035.0 and absf(z) <= 6.2:
 		return "EXPOSED"
 	return ""
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if not get_tree().paused:
+		clock_seconds += delta   # real time: one second is one second
+		while clock_seconds >= DAY_SECONDS:
+			clock_seconds -= DAY_SECONDS
+			clock_day += 1
+	if inventory_ui != null and inventory_ui.is_open:
+		inventory_ui.update_clock(clock_day, clock_seconds)
 	if debug_label.visible:
 		debug_label.text = _debug_text()
 
@@ -709,7 +769,8 @@ func _on_fatal_fall(height: float) -> void:
 
 func _save(path := SAVE_PATH) -> void:
 	var lp := WorldOrigin.to_logical(player.position)
-	var containers := {}
+	# Streamed-out rooms keep their loot state in InteriorKit; loaded ones override it below.
+	var containers := InteriorKit.loot_state.duplicate(true)
 	for node in get_tree().get_nodes_in_group(LootContainer.GROUP):
 		var c := node as LootContainer
 		if c != null:
@@ -739,6 +800,7 @@ func _save(path := SAVE_PATH) -> void:
 		"relays": relays,
 		"expresses": expresses,
 		"journal": journal_ui.serialize() if journal_ui != null else {},
+		"clock": { "day": clock_day, "seconds": clock_seconds },
 	}
 	# Write to a sibling temp file and swap it in, so a crash mid-write can never
 	# leave a truncated save for Steam Cloud to upload over the good copy.
@@ -785,6 +847,10 @@ func _load(path := SAVE_PATH) -> bool:
 		player_inventory.deserialize(data.inventory)
 	if data.has("containers"):
 		var cmap: Dictionary = data.containers
+		InteriorKit.loot_state.clear()
+		for cid: String in cmap:
+			if cid.begins_with(InteriorKit.LOOT_PREFIX):
+				InteriorKit.loot_state[cid] = cmap[cid]
 		for node in get_tree().get_nodes_in_group(LootContainer.GROUP):
 			var c := node as LootContainer
 			if c != null and cmap.has(c.container_id):
@@ -807,6 +873,9 @@ func _load(path := SAVE_PATH) -> bool:
 			var ex := node as InterStackExpress
 			if ex != null and emap.has(ex.express_id):
 				ex.deserialize(emap[ex.express_id])
+	if data.has("clock"):
+		clock_day = maxi(1, int(data.clock.get("day", 1)))
+		clock_seconds = clampf(float(data.clock.get("seconds", 0.0)), 0.0, DAY_SECONDS - 1.0)
 	if data.has("journal") and journal_ui != null:
 		journal_ui.deserialize(data.journal)
 	print("[Asset31] loaded logical %s" % [p.logical])
@@ -830,6 +899,34 @@ func _handle_cmdline() -> void:
 		elif arg == "--selftest":
 			_run_selftest()
 			return
+		elif arg == "--terracelift":
+			# Rides the Glass Terrace east freight lift down and back up.
+			survival.enabled = false
+			player.input_enabled = false
+			for leg in 2:
+				var y_from := 41024.06 if leg == 0 else 41000.06
+				var y_to := 41000.0 if leg == 0 else 41024.0
+				# Step off first: the lift waits for its rider to leave before it will run again.
+				_place_player([6921.0, y_from, 155.0], 0.0, 0.0)
+				for i in 40:
+					await get_tree().physics_frame
+				_place_player([6926.62, y_from, 155.0], 0.0, 0.0)
+				for i in 1500:
+					await get_tree().physics_frame
+				var lp := WorldOrigin.to_logical(player.position)
+				if absf(lp[1] - y_to) > 0.4:
+					push_error("[TerraceLift] FAIL leg %d: player y %.2f, expected %.2f" % [leg, lp[1], y_to])
+					get_tree().quit(1)
+					return
+			print("[TerraceLift] PASS: rode down to the street and back up to the terrace")
+			get_tree().quit(0)
+			return
+		elif arg == "--lifttest":
+			_run_lifttest()
+			return
+		elif arg == "--roomtest":
+			_run_roomtest()
+			return
 		elif arg == "--zfight-lint":
 			ZFightLint.run(self, 5)
 			get_tree().quit(0)
@@ -845,6 +942,9 @@ func _handle_cmdline() -> void:
 		elif arg == "--tour":
 			_run_tour()
 			return
+		elif arg == "--showcase":
+			_run_tour(SHOWCASE, 0.22)
+			return
 		elif arg.begins_with("--motion="):
 			_run_motion(arg.get_slice("=", 1))
 			return
@@ -852,6 +952,12 @@ func _handle_cmdline() -> void:
 			planet_shots_dir = arg.get_slice("=", 1)
 		elif arg.begins_with("--shot-filter="):
 			shot_filter = arg.get_slice("=", 1)
+		elif arg.begins_with("--shot-at="):
+			# Ad-hoc viewpoint: --shot-at=name:x,y,z,yaw_deg,pitch_deg (repeatable, needs --shots=DIR).
+			var spec := arg.get_slice("=", 1)
+			var nums := spec.get_slice(":", 1).split_floats(",")
+			if nums.size() >= 5:
+				_extra_shots.append([spec.get_slice(":", 0), [nums[0], nums[1], nums[2]], nums[3], nums[4]])
 		elif arg.begins_with("--shots="):
 			shots_dir = arg.get_slice("=", 1)
 	if planet_shots_dir != "":
@@ -902,8 +1008,9 @@ func _run_shots(dir: String, shot_filter := "") -> void:
 	player.input_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-	for shot: Array in SHOTS:
-		if shot_filter != "" and not String(shot[0]).contains(shot_filter):
+	var shot_list: Array = _extra_shots if not _extra_shots.is_empty() else SHOTS
+	for shot: Array in shot_list:
+		if _extra_shots.is_empty() and shot_filter != "" and not String(shot[0]).contains(shot_filter):
 			continue
 		_place_player(shot[1], deg_to_rad(shot[2]), deg_to_rad(shot[3]))
 		for i in 40:
@@ -920,7 +1027,7 @@ func _run_shots(dir: String, shot_filter := "") -> void:
 			shot[0], ms, int(1000.0 / ms),
 			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 			int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000.0)])
-	if shot_filter != "":
+	if shot_filter != "" or not _extra_shots.is_empty():
 		get_tree().quit(0)
 		return
 	# Also capture one UI verification shot showing the Tarkov grid inventory open in the home shelter.
@@ -1073,10 +1180,10 @@ func _run_selftest() -> void:
 	if _environment_condition(PackedFloat64Array([4552.0, 41000.0, -8.0])) != "SHELTER":
 		fail.call("mid-span bridge shelter condition check failed")
 		return
-	if _environment_condition(PackedFloat64Array([6253.0, 41000.0, -340.0])) != "SHELTER":
+	if _environment_condition(PackedFloat64Array([6253.0, UPPER_LY, -340.0])) != "SHELTER":
 		fail.call("hydroponics shelter condition check failed")
 		return
-	if _environment_condition(PackedFloat64Array([6600.0, 41000.0, -1100.0])) != "SHELTER":
+	if _environment_condition(PackedFloat64Array([6600.0, UPPER_LY, -1100.0])) != "SHELTER":
 		fail.call("preserve shelter condition check failed")
 		return
 	if _environment_condition(PackedFloat64Array([3253.0, 0.1, -189.0])) != "SHELTER":
@@ -1252,6 +1359,99 @@ func _run_selftest() -> void:
 	get_tree().quit(0)
 
 
+## Enterable-room verification: for door plans around the STK-0413 test district, walks
+## the player from the street through the doorway. Fails if a room did not stream in, a
+## doorway is blocked, or the player ends up outside the room's footprint.
+func _run_roomtest() -> void:
+	survival.enabled = false
+	player.input_enabled = false
+	var stack := stacks[1]
+	var centre := Vector3(-1375.0, 0.0, 312.5)
+	var plans: Array = []
+	for key: Vector2i in stack.door_buildings:
+		for b: Dictionary in stack.door_buildings[key]:
+			if (b.door.pos as Vector3).distance_to(centre) < 150.0:
+				plans.append(b)
+	var entered := 0
+	var kinds := {}
+	var faces := {}
+	for b: Dictionary in plans:
+		var xf := InteriorKit.xform(b)
+		var start := xf * Vector3(0.0, 0.05, -2.2)
+		_place_player([stack.lx + start.x, stack.ly + start.y, stack.lz + start.z], 0.0, 0.0)
+		for i in 6:
+			await get_tree().physics_frame
+		if not stack.rooms.has(b.c):
+			push_error("[Roomtest] FAIL: room %s did not stream in" % [b.door])
+			get_tree().quit(1)
+			return
+		var room: InteriorRoom = stack.rooms[b.c]
+		player.speed_override = 3.0
+		player.autopilot_dir = room.global_basis.z
+		for i in 110:
+			await get_tree().physics_frame
+		player.autopilot_dir = Vector3.ZERO
+		var local := room.to_local(player.global_position)
+		if local.z < 1.5 or local.z > room.d + InteriorKit.WALL_T or local.x < room.x0 or local.x > room.x1:
+			push_error("[Roomtest] FAIL: could not walk into room %s (ended at local %s)" % [b.door, local])
+			get_tree().quit(1)
+			return
+		entered += 1
+		kinds[int(b.door.tpl)] = true
+		faces[int(b.door.face)] = true
+	if entered < 20 or faces.size() < 4:
+		push_error("[Roomtest] FAIL: only %d rooms / %d facade directions covered" % [entered, faces.size()])
+		get_tree().quit(1)
+		return
+	print("[Roomtest] PASS: walked into %d rooms (%d templates, all %d facade directions)." % [entered, kinds.size(), faces.size()])
+	get_tree().quit(0)
+
+
+## Brink lift verification: rides EL-0413-S from the Floor 77 edge to the top floor and
+## back with the real player aboard, then checks the player can step off onto each pier.
+func _run_lifttest() -> void:
+	survival.enabled = false
+	player.input_enabled = false
+	var lift: DeepRelayLift = null
+	for node in get_tree().get_nodes_in_group(DeepRelayLift.GROUP):
+		if (node as DeepRelayLift).relay_id == "EL-0413-S":
+			lift = node as DeepRelayLift
+	if lift == null:
+		push_error("[Lifttest] FAIL: EL-0413-S not found")
+		get_tree().quit(1)
+		return
+	for leg in 2:
+		var from_ly := lift.bot_ly if leg == 0 else lift.top_ly
+		var to_ly := lift.top_ly if leg == 0 else lift.bot_ly
+		_place_player([lift.lx, from_ly + 0.05, lift.lz], 0.0, 0.0)
+		for i in 10:
+			await get_tree().physics_frame
+		var msg := lift.activate_console(0)
+		var steps := 0
+		while (lift.moving or steps < 5) and steps < 40000:
+			await get_tree().physics_frame
+			steps += 1
+		var lp := WorldOrigin.to_logical(player.position)
+		if lift.moving or absf(lift.car_ly - to_ly) > 0.1 or absf(lp[1] - to_ly) > 0.6:
+			push_error("[Lifttest] FAIL leg %d (%s): car %.2f, player y %.2f, target %.2f after %d steps" % [leg, msg, lift.car_ly, lp[1], to_ly, steps])
+			get_tree().quit(1)
+			return
+		# Step off west onto the pier and make sure there is ground there.
+		player.speed_override = 3.0
+		player.autopilot_dir = Vector3(-1, 0, 0)
+		for i in 150:
+			await get_tree().physics_frame
+		player.autopilot_dir = Vector3.ZERO
+		var off := WorldOrigin.to_logical(player.position)
+		if off[0] > lift.lx - 3.0 or absf(off[1] - to_ly) > 0.8:
+			push_error("[Lifttest] FAIL leg %d: could not step onto the pier (ended at %s)" % [leg, off])
+			get_tree().quit(1)
+			return
+		print("[Lifttest] leg %d OK: %s in %.0f s, stepped off at x %.1f y %.2f" % [leg, msg, steps / 60.0, off[0], off[1]])
+	print("[Lifttest] PASS")
+	get_tree().quit(0)
+
+
 func _exit_tree() -> void:
 	SliceMaterials.clear_caches()
 
@@ -1298,6 +1498,31 @@ func _run_motion(dir: String) -> void:
 # Each segment: caption, start (logical), duration s, walk waypoints [x, z]
 # (logical), walk speed, look keys [t, yaw_deg, pitch_deg] (empty = look along
 # the walking direction).
+# ~45 s overview of every environment in journey order, each with its own ambience.
+# Same row format as TOUR, plus an optional 8th element naming a staged action.
+const SHOWCASE := [
+	["Home shelter, STK-0412 Floor 77", [-1490.3, 41000.05, 112.7], 1.8, [], 0.0, [[0.0, 180.0, -6.0], [1.8, 140.0, -4.0]]],
+	["Market street", [-1470.0, 41000.0, 4.0], 2.4, [[-1440.0, 4.0]], 3.5, []],
+	["Foundry hall", [1858.0, 41000.0, -8.0], 2.2, [], 0.0, [[0.0, -122.0, 12.0], [2.2, -100.0, 10.0]]],
+	["Deep core elevator EL-DEEP-00: 41 km down", [3271.5, 30000.05, -179.0], 2.8, [], 0.0, [[0.0, 90.0, -8.0], [2.8, 90.0, -30.0]], 0.0, "deep"],
+	["Planetary crust, 0 m", [3262.0, 0.08, -176.0], 1.8, [], 0.0, [[0.0, 42.0, 10.0], [1.8, 60.0, 14.0]]],
+	["The 3 km bridge between the twin stacks", [4300.0, 41000.0, 0.0], 3.0, [[4400.0, 0.0]], 4.6, [[0.0, -90.0, 2.0], [1.4, -60.0, -14.0], [3.0, -90.0, 2.0]]],
+	["Inter-Stack Express station", [5988.5, 41000.08, -264.0], 1.6, [], 0.0, [[0.0, 26.0, 2.0], [1.6, 10.0, 2.0]]],
+	["Aboard EXP-077 to the next stack, 396 km/h", [5980.0, 41000.05, -3024.0], 2.4, [], 0.0, [[0.0, 0.0, 0.0], [2.4, -30.0, -4.0]], 0.0, "train"],
+	["STK-0413 arrival: the glass terrace", [6922.0, 41028.05, 110.0], 2.0, [], 0.0, [[0.0, 112.0, -2.0], [2.0, 95.0, 0.0]]],
+	["Residential blocks: every lit door can be entered", [7705.0, 41000.05, 372.0], 2.8, [[7705.0, 340.0]], 3.5, [[0.0, 60.0, 2.0], [2.8, 110.0, 4.0]]],
+	["The barren blocks: power failing", [7705.0, 41000.05, 1150.0], 2.6, [[7705.0, 1190.0]], 4.0, []],
+	["The empty plates, looking back", [7705.0, 41000.05, 2050.0], 1.4, [], 0.0, [[0.0, 20.0, 4.0], [1.4, -20.0, 4.0]]],
+	["Never-built frames and a squatters' fire", [7705.0, 41000.05, 2350.0], 2.2, [[7705.0, 2385.0]], 4.0, [[0.0, -160.0, 14.0], [2.2, -140.0, 18.0]]],
+	["The return pipe: the only warmth", [7700.0, 41000.05, 2550.0], 1.8, [], 0.0, [[0.0, 150.0, 0.0], [1.8, 120.0, 2.0]]],
+	["The unclosed edge: the void between stacks", [7700.0, 41000.05, 2999.2], 2.8, [], 0.0, [[0.0, 180.0, -12.0], [2.8, 168.0, -30.0]], 0.0, "bolt"],
+	["Brink lift: 18 km up the open face", [7712.0, 50000.05, 3004.0], 2.0, [], 0.0, [[0.0, 180.0, -20.0], [2.0, 180.0, -5.0]], 0.0, "brink"],
+	["Top floor, unheated", [7705.0, 59100.05, 2940.0], 2.8, [[7705.0, 2900.0]], 4.6, []],
+	["The gate to the hydroponic bay", [6253.0, 59100.05, -40.0], 2.2, [[6253.0, -85.0]], 4.6, []],
+	["Hydroponic Bay 413-A", [6253.0, 59100.05, -112.0], 2.0, [], 0.0, [[0.0, 10.0, 2.0], [2.0, -10.0, 2.0]]],
+	["Ecological Preserve 413-B", [6600.0, 59100.08, -836.0], 2.2, [], 0.0, [[0.0, 4.0, 10.0], [2.2, 4.0, 40.0]]],
+]
+
 const TOUR := [
 	["Home shelter  (ref 000s)", [-1490.3, 41000.05, 112.7], 12.0, [[-1491.0, 112.9], [-1494.5, 112.9], [-1499.0, 112.9]], 1.6,
 		[[0.0, 180.0, -6.0], [3.0, 122.0, -2.0], [5.5, 165.0, -14.0], [7.5, 92.0, 0.0], [12.0, 90.0, 0.0]], 7.5],
@@ -1329,7 +1554,49 @@ const TOUR := [
 ]
 
 
-func _run_tour() -> void:
+## Puts the transports back at rest between showcase shots.
+func _tour_reset_transports() -> void:
+	for node in get_tree().get_nodes_in_group(DeepRelayLift.GROUP):
+		var r := node as DeepRelayLift
+		r._release_rider()
+		r.deserialize({ "car_ly": r.top_ly if r.relay_id == "EL-DEEP-00" else r.bot_ly, "moving": false,
+			"target_ly": r.top_ly if r.relay_id == "EL-DEEP-00" else r.bot_ly, "vel": 0.0, "accel": 0.0 })
+	for node in get_tree().get_nodes_in_group(InterStackExpress.GROUP):
+		var ex := node as InterStackExpress
+		ex._release_rider()
+		ex.deserialize({ "train_lz": InterStackExpress.SOUTH_LZ, "moving": false, "target_lz": InterStackExpress.SOUTH_LZ, "vel": 0.0, "accel": 0.0 })
+
+
+## Stages a transport mid-journey (or a lightning stroke) for one showcase shot.
+func _tour_action(action: String, start: Array) -> void:
+	match action:
+		"deep", "brink":
+			var want := "EL-DEEP-00" if action == "deep" else "EL-0413-S"
+			for node in get_tree().get_nodes_in_group(DeepRelayLift.GROUP):
+				var r := node as DeepRelayLift
+				if r.relay_id == want:
+					var down := action == "deep"
+					r.deserialize({ "car_ly": float(start[1]) - 0.05, "moving": true,
+						"target_ly": r.bot_ly if down else r.top_ly,
+						"vel": -DeepRelayLift.MAX_SPEED if down else DeepRelayLift.MAX_SPEED, "accel": 0.0 })
+		"train":
+			for node in get_tree().get_nodes_in_group(InterStackExpress.GROUP):
+				var ex := node as InterStackExpress
+				ex.deserialize({ "train_lz": float(start[2]) + 24.0, "moving": true, "target_lz": InterStackExpress.NORTH_LZ,
+					"vel": -InterStackExpress.MAX_SPEED, "accel": 0.0 })
+				ex._vel = -InterStackExpress.MAX_SPEED   # already at cruise
+				if ex._traction_audio.stream != null:
+					ex._traction_audio.play()
+				if ex._wind_audio.stream != null:
+					ex._wind_audio.play()
+				ex._attach_rider_if_aboard()
+		"bolt":
+			var abyss := get_node_or_null(^"AbyssFloor") as AbyssFloor
+			if abyss != null:
+				abyss.strike_soon(0.7, 180.0)
+
+
+func _run_tour(segs: Array = TOUR, fade_t := 0.5) -> void:
 	debug_label.visible = false
 	hud.set_hud_visible(false)
 	survival.enabled = false
@@ -1350,7 +1617,7 @@ func _run_tour() -> void:
 	caption.add_theme_constant_override(&"shadow_offset_x", 1)
 	caption.add_theme_constant_override(&"shadow_offset_y", 1)
 	layer.add_child(caption)
-	for seg: Array in TOUR:
+	for seg: Array in segs:
 		var start: Array = seg[1]
 		var dur: float = seg[2]
 		var walk: Array = seg[3]
@@ -1361,7 +1628,14 @@ func _run_tour() -> void:
 		if keys.is_empty() and not walk.is_empty():
 			var d := Vector2(float(walk[0][0]) - float(start[0]), float(walk[0][1]) - float(start[2]))
 			yaw0 = rad_to_deg(atan2(-d.x, -d.y))
+		if segs != TOUR:
+			_tour_reset_transports()
 		_place_player(start, deg_to_rad(yaw0), deg_to_rad(pitch0))
+		if seg.size() > 7:
+			_tour_action(String(seg[7]), start)
+		if segs != TOUR and ambience != null:
+			# Short shots: cut straight to each place's own ambience instead of fading into it.
+			ambience._apply_profile(ambience._profile_at_listener(), true)
 		player.speed_override = float(seg[4])
 		caption.text = seg[0]
 		var wi := 0
@@ -1370,7 +1644,7 @@ func _run_tour() -> void:
 		while t < dur:
 			var dt := get_process_delta_time()
 			t += dt
-			fade.color.a = clampf(1.0 - t / 0.5, 0.0, 1.0) + clampf((t - (dur - 0.5)) / 0.5, 0.0, 1.0)
+			fade.color.a = clampf(1.0 - t / fade_t, 0.0, 1.0) + clampf((t - (dur - fade_t)) / fade_t, 0.0, 1.0)
 			var lp := WorldOrigin.to_logical(player.position)
 			var dir := Vector3.ZERO
 			if wi < walk.size() and t >= walk_delay:

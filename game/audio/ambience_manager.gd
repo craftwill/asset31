@@ -113,6 +113,11 @@ func _setup_buses() -> void:
 		var j := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(j, &"Ambience")
 		AudioServer.set_bus_send(j, &"Master")
+		# Safety limiter: a loud low bed must never clip the output (it gates everything else).
+		var lim := AudioEffectHardLimiter.new()
+		lim.ceiling_db = -1.0
+		lim.pre_gain_db = 0.0
+		AudioServer.add_bus_effect(j, lim)
 	# Dedicated acoustic post-processing bus for The Void Bell (Continuum sacred gong):
 	# zone-reactive LowPass -> colossal twin-stack canyon Delay echoes -> cavernous Reverb -> Compressor.
 	_bell_bus_idx = AudioServer.get_bus_index(&"VoidBell")
@@ -387,6 +392,18 @@ func _pick_oneshot(profile_name: String) -> String:
 			if roll > 0.65:
 				return "creak"
 			return "metal_ring_%d" % _rng.randi_range(0, 2)
+		"barren", "barren_deep":
+			# Dead blocks: the structure settling, nothing human.
+			if roll > 0.55:
+				return "creak"
+			elif roll > 0.2:
+				return "cable_groan"
+			return "impact_far"
+		"unbuilt", "brink":
+			# Nothing works out here: only the one long groan, slowed with the bed.
+			return "cable_groan"
+		"frozen":
+			return "cable_groan" if roll > 0.4 else "creak"
 		_:
 			if roll > 0.93:
 				return "horn_far"

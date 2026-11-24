@@ -89,7 +89,8 @@ func _build_shaft() -> void:
 	var y := 3.5
 	while y <= top_height + 2.0:
 		beams.append({ "c": Vector3(0, y, -1.6), "s": Vector3(3.2, 0.1, 0.1) })
-		beams.append({ "c": Vector3(-1.6, y, 0.02), "s": Vector3(0.1, 0.1, 3.25) })
+		if y < top_height + 0.2 or y > top_height + 2.4:   # keep the boarding side clear at the top landing
+			beams.append({ "c": Vector3(-1.6, y, 0.02), "s": Vector3(0.1, 0.1, 3.25) })
 		beams.append({ "c": Vector3(1.6, y, 0.02), "s": Vector3(0.1, 0.1, 3.25) })
 		y += 3.5
 	SliceMaterials.add_multimesh(self, beams, &"structure")

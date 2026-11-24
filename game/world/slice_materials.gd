@@ -97,6 +97,18 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(FACADE, _facade({ "base_sink": 1.0, "window_color": Color(0.72, 0.8, 0.95),
 				"window_color_alt": Color(1.0, 0.7, 0.4), "alt_fraction": 0.04, "tint": Color(0.8, 0.85, 0.95),
 				"fade_start": 3200.0, "fade_end": 4000.0 }))
+		# City MultiMeshes: same facades, plus enterable-room cut-outs (see InteriorKit).
+		&"city":
+			m = _make(FACADE, _facade({ "base_sink": 1.0, "doors_enabled": 1.0 }))
+		&"city_small":
+			m = _make(FACADE, _facade({ "base_sink": 1.0, "fade_start": 3200.0, "fade_end": 4000.0, "doors_enabled": 1.0 }))
+		&"city_cool":
+			m = _make(FACADE, _facade({ "base_sink": 1.0, "window_color": Color(0.72, 0.8, 0.95),
+				"window_color_alt": Color(1.0, 0.7, 0.4), "alt_fraction": 0.04, "tint": Color(0.8, 0.85, 0.95), "doors_enabled": 1.0 }))
+		&"city_small_cool":
+			m = _make(FACADE, _facade({ "base_sink": 1.0, "window_color": Color(0.72, 0.8, 0.95),
+				"window_color_alt": Color(1.0, 0.7, 0.4), "alt_fraction": 0.04, "tint": Color(0.8, 0.85, 0.95),
+				"fade_start": 3200.0, "fade_end": 4000.0, "doors_enabled": 1.0 }))
 		&"shopfront":
 			m = _make(FACADE, _facade({ "base_sink": 1.0, "shopfront": 1.0, "lit_fraction": 0.3 }))
 		&"authored_facade":
@@ -113,6 +125,16 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 1.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
 				"window_color": Color(0.85, 0.9, 1.0), "tint": Color(0.8, 0.85, 0.95),
 				"no_snap": 1.0, "floor_bands": 1.0, "interior_enabled": 0.0 }))
+		&"stack_wall_cool_dying":
+			# Outer walls of a stack whose far end has lost power: window lights die out
+			# along the wall (StackRuntime sets `lit_fade_band`).
+			m = _make(FACADE, _facade({ "lit_fraction": 0.11, "style_override": 1.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
+				"window_color": Color(0.85, 0.9, 1.0), "tint": Color(0.8, 0.85, 0.95),
+				"no_snap": 1.0, "floor_bands": 1.0, "interior_enabled": 0.0, "lit_fade_pixel": 1.0 }))
+		&"abyss_tower":
+			# Towers in the haze far below: dark shapes with a scatter of warm lights.
+			m = _make(FACADE, _facade({ "lit_fraction": 0.2, "style_override": 2.0, "tex_sizes": Vector3(2.5, 8.0, 8.0),
+				"tint": Color(0.5, 0.42, 0.36), "no_snap": 1.0, "interior_enabled": 0.0, "world_y": 1.0 }))
 		&"ceiling":
 			m = _make(FACADE, _facade({ "windows_enabled": 0.0, "ceiling_lights": 1.0, "roof_color": Color(0.09, 0.07, 0.06),
 				"no_snap": 1.0, "interior_enabled": 0.0 }))
@@ -122,6 +144,18 @@ static func get_mat(id: StringName) -> Material:
 		# --- ground
 		&"ground":
 			m = _make(GROUND, { "albedo_tex": tex(&"pavers"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime") })
+		&"ground_barren":
+			m = _make(GROUND, { "albedo_tex": tex(&"pavers"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime"),
+				"wet_amount": 0.8, "wet_scale": 17.0, "tint": Color(0.78, 0.72, 0.66) })
+		&"ground_blue":
+			# Barren paving that gives way, plate by plate, to the blue plates of the
+			# never-built zone. StackRuntime sets `relay_band` from the district.
+			m = _make(GROUND, { "albedo_tex": tex(&"pavers"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime"),
+				"wet_amount": 0.8, "wet_scale": 17.0, "tint": Color(0.78, 0.72, 0.66),
+				"tint_b": Color(0.95, 1.25, 1.85), "tex_size_b": 12.5, "wet_b": 0.3 })
+		&"ground_ice":
+			m = _make(GROUND, { "albedo_tex": tex(&"pavers"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime"),
+				"tex_size": 12.5, "wet_amount": 0.95, "wet_scale": 31.0, "tint": Color(2.2, 2.5, 2.9) })
 		&"concrete_floor":
 			m = _make(GROUND, { "albedo_tex": tex(&"concrete"), "side_tex": tex(&"concrete"), "grime_tex": tex(&"grime"),
 				"tex_size": 8.0, "use_world": 1.0, "wet_amount": 0.3, "tint": Color(0.8, 0.75, 0.7) })
@@ -181,6 +215,25 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(SURFACE, _surface(&"metal_dark", 1.0, { "tint": Color(3.0, 1.8, 1.0), "roughness_val": 0.5, "specular_val": 0.5 }))
 		&"ceramic":
 			m = _make(SURFACE, _surface(&"fabric", 1.0, { "tint": Color(1.7, 1.65, 1.5), "roughness_val": 0.4 }))
+		&"tile_cool":
+			m = _make(SURFACE, _surface(&"panel", 1.2, { "use_world": 1.0, "tint": Color(1.5, 1.75, 1.75), "roughness_val": 0.45, "specular_val": 0.4 }))
+		&"ice":
+			m = _make(SURFACE, _surface(&"concrete", 5.0, { "tint": Color(2.6, 2.9, 3.3), "roughness_val": 0.25, "specular_val": 0.6, "no_snap": 1.0 }))
+		&"frost_wall":
+			m = _make(SURFACE, _surface(&"panel", 6.0, { "tint": Color(1.55, 1.75, 2.0), "roughness_val": 0.7, "specular_val": 0.2, "no_snap": 1.0 }))
+		&"rust_steel":
+			m = _make(SURFACE, _surface(&"metal_dark", 3.0, { "tint": Color(2.3, 0.98, 0.46), "roughness_val": 0.9, "specular_val": 0.1, "no_snap": 1.0 }))
+		&"deck_pale":
+			m = _make(SURFACE, _surface(&"concrete", 6.0, { "tint": Color(1.25, 1.42, 1.6), "roughness_val": 0.9, "specular_val": 0.1, "no_snap": 1.0 }))
+		&"pipe_pale":
+			m = _make(SURFACE, _surface(&"panel", 2.0, { "tint": Color(2.0, 2.3, 2.6), "roughness_val": 0.5, "specular_val": 0.35, "no_snap": 1.0,
+				"emission_color": Color(0.5, 0.62, 0.8), "emission_energy": 0.16 }))
+		&"pipe_flange":
+			m = _make(SURFACE, _surface(&"metal_dark", 1.0, { "tint": Color(3.4, 1.15, 0.25), "emission_color": Color(1.0, 0.36, 0.06), "emission_energy": 0.22, "no_snap": 1.0 }))
+		&"plaster":
+			m = _make(SURFACE, _surface(&"concrete", 5.0, { "use_world": 1.0, "tint": Color(1.25, 1.02, 0.78), "roughness_val": 0.95, "specular_val": 0.05 }))
+		&"plaster_cool":
+			m = _make(SURFACE, _surface(&"concrete", 5.0, { "use_world": 1.0, "tint": Color(0.92, 1.02, 1.12), "roughness_val": 0.95, "specular_val": 0.05 }))
 		&"concrete":
 			m = _make(SURFACE, _surface(&"concrete", 4.0, { "use_world": 1.0 }))
 		&"hazard":
@@ -248,6 +301,12 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(CORONA, { "color": WARM, "energy": 0.9 })
 		&"corona_soft":
 			m = _make(CORONA, { "color": WARM, "energy": 0.45, "fade_start": 400.0, "fade_end": 3500.0 })
+		&"corona_beacon":
+			# The far light at the end of the long street: a suggestion only. Visible from the
+			# residential end, it fades through the barren blocks and is all but gone by the
+			# time the blue fog starts (about 1,250 m from it).
+			m = _make(CORONA, { "color": Color(0.66, 0.78, 0.92), "energy": 0.2, "fade_start": 2800.0, "fade_end": 5600.0,
+				"near_dim": 0.03, "near_dim_start": 1250.0, "near_dim_end": 2150.0 })
 		&"corona_cool":
 			m = _make(CORONA, { "color": COOL, "energy": 0.8 })
 		&"corona_molten":
@@ -262,6 +321,8 @@ static func get_mat(id: StringName) -> Material:
 			m = _make(MOLTEN, { "flow": 0.3, "energy": 2.2 })
 		&"glass":
 			m = _make(GLASS, {})
+		&"water":
+			m = _make(GLASS, { "color": Color(0.10, 0.32, 0.36), "alpha_val": 0.62 })
 		&"curtain_wall":
 			m = _make(CURTAIN_WALL, {})
 		&"figure":
@@ -326,10 +387,12 @@ static func add_cylinder(parent: Node3D, a: Vector3, b: Vector3, radius: float, 
 
 
 ## items: Array of { "c": Vector3, "s": Vector3, "seed": float, optional "r": Vector3 euler }.
-static func add_multimesh(parent: Node3D, items: Array, mat_id: StringName, vis_end := 0.0, mesh: Mesh = null) -> MultiMeshInstance3D:
+## `door_colors` also writes InteriorKit's per-instance door plan into COLOR (city facades).
+static func add_multimesh(parent: Node3D, items: Array, mat_id: StringName, vis_end := 0.0, mesh: Mesh = null, door_colors := false) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true
+	mm.use_colors = door_colors
 	mm.mesh = mesh if mesh != null else unit_box()
 	mm.instance_count = items.size()
 	for i in items.size():
@@ -338,6 +401,8 @@ static func add_multimesh(parent: Node3D, items: Array, mat_id: StringName, vis_
 		var basis := Basis.from_euler(b.get("r", Vector3.ZERO)) * Basis.from_scale(s)
 		mm.set_instance_transform(i, Transform3D(basis, b.c))
 		mm.set_instance_custom_data(i, Color(float(b.get("seed", 0.0)), s.x, s.y, s.z))
+		if door_colors:
+			mm.set_instance_color(i, InteriorKit.instance_color(b))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	mmi.material_override = get_mat(mat_id)

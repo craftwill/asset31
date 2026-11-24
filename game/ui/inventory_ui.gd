@@ -20,6 +20,7 @@ var _panel: PanelContainer
 var _player_box: Control
 var _container_wrap: VBoxContainer
 var _container_title: Label
+var _clock_label: Label
 var _container_box: Control
 var _stats_label: Label
 var _tip_title: Label
@@ -120,6 +121,14 @@ func _build_ui() -> void:
 	title.add_theme_font_size_override(&"font_size", 12)
 	title.add_theme_color_override(&"font_color", Color(1.0, 0.84, 0.56))
 	hdr.add_child(title)
+	# Mantle clock: the pack is the only place the time is shown.
+	_clock_label = Label.new()
+	_clock_label.add_theme_font_size_override(&"font_size", 10)
+	_clock_label.add_theme_color_override(&"font_color", Color(0.92, 0.80, 0.58))
+	hdr.add_child(_clock_label)
+	var clock_gap := Control.new()
+	clock_gap.custom_minimum_size = Vector2(18, 0)
+	hdr.add_child(clock_gap)
 	_stats_label = Label.new()
 	_stats_label.add_theme_font_size_override(&"font_size", 10)
 	_stats_label.add_theme_color_override(&"font_color", Color(0.84, 0.74, 0.60))
@@ -195,6 +204,14 @@ func _refresh() -> void:
 		_rebuild_grid_view(_container_box, container_grid)
 	else:
 		_container_wrap.visible = false
+
+
+## `day` counts from 1; `seconds` is the time of day (a Mantle day runs to 24:39:35).
+func update_clock(day: int, seconds: float) -> void:
+	if _clock_label == null:
+		return
+	var t := int(seconds)
+	_clock_label.text = "DAY %d   %02d:%02d:%02d" % [day, t / 3600, (t / 60) % 60, t % 60]
 
 
 func _refresh_stats() -> void:

@@ -283,7 +283,7 @@ func _arrival_extras(ow: float, oh: float) -> void:
 	# Matching north-bound directional signpost guiding explorers toward Hydroponics, Preserve & EXP-077 Express.
 	_gb(Vector3(145.0, 0.0, -96.0), Vector3(145.3, 3.6, -96.3), &"structure", _body)
 	_gb(Vector3(144.95, 2.5, -98.4), Vector3(145.35, 3.5, -93.8), &"structure")
-	SliceMaterials.add_sign(self, g(144.9, 3.0, -96.1), "↑ HYDROPONIC BAY  ·  PRESERVE 413-B\nEXP-077 INTER-STACK EXPRESS (NORTH)", 0.0082, Color(0.84, 0.94, 1.0), -_sx * PI * 0.5)
+	SliceMaterials.add_sign(self, g(144.9, 3.0, -96.1), "↑ EXP-077 INTER-STACK EXPRESS (NORTH)\n→ RESIDENTIAL BLOCKS  ·  GLASS TERRACE 413-S", 0.0082, Color(0.84, 0.94, 1.0), -_sx * PI * 0.5)
 	var nl := SliceMaterials.make_lamp_light(SliceMaterials.COOL, 1.3, 12.0)
 	nl.position = g(144.2, 3.3, -96.1)
 	add_child(nl)

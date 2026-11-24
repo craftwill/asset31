@@ -14,6 +14,11 @@ var layouts: Dictionary = {}   # Vector2i -> Array[building]
 var lamps: Dictionary = {}     # Vector2i -> Array[Vector3]
 var loaded: Dictionary = {}    # Vector2i -> Node3D
 var building_count := 0
+var dead_poles: Dictionary = {}      # Vector2i -> Array[Vector3] unlit lamp posts (collision only)
+var frame_cols: Dictionary = {}      # Vector2i -> Array[column box] of the never-built zone
+var door_buildings: Dictionary = {}   # Vector2i -> Array[building with a door plan]
+var rooms: Dictionary = {}     # Vector3 (building centre) -> InteriorRoom
+var _rooms_root: Node3D
 
 
 static func build(stack_def: Dictionary) -> StackRuntime:
@@ -58,7 +63,18 @@ func _build_shell() -> void:
 	# Floor collision (visual floor = ground tiles below).
 	SliceMaterials.add_collision_box(body, Vector3(0, -slab * 0.5, 0), Vector3(w, slab, d))
 	# Ceiling slab with lamp grid on its underside.
-	SliceMaterials.add_box(shell, body, Vector3(0, h + slab * 0.5, 0), Vector3(w, slab, d), &"ceiling")
+	var ceiling := SliceMaterials.add_box(shell, body, Vector3(0, h + slab * 0.5, 0), Vector3(w, slab, d), &"ceiling")
+	for district: Dictionary in def.districts:
+		if district.kind == "abandoned" and district.has("rect"):
+			# The lamp grid has failed from the barren blocks outward.
+			var mat := (ceiling.material_override as ShaderMaterial).duplicate() as ShaderMaterial
+			var z0 := float(district.rect[1])
+			mat.set_shader_parameter(&"dead_band", Vector2(z0 - 220.0, z0 + 120.0))
+			ceiling.material_override = mat
+			# Window lights thin out the deeper you go (logical z), then stop entirely.
+			for mat_id: StringName in [building_mat(), building_small_mat(), wall_mat()]:
+				(SliceMaterials.get_mat(mat_id) as ShaderMaterial).set_shader_parameter(
+					&"lit_fade_band", Vector2(lz + z0 - 200.0, lz + z0 + 420.0))
 
 	# Walls sit outside the w x d footprint. X walls cover the corners; Z walls
 	# fit between them, so no faces overlap or z-fight.
@@ -66,6 +82,8 @@ func _build_shell() -> void:
 	for side: String in ["+x", "-x", "+z", "-z"]:
 		var along_x := side.ends_with("z")
 		var sgn := 1.0 if side.begins_with("+") else -1.0
+		if side in def.get("open_sides", []):
+			continue   # this side of the stack was never closed: the floor ends at the void
 		var normal_c := sgn * ((d if along_x else w) * 0.5 + t * 0.5)
 		var span := w if along_x else d + 2.0 * t
 		if gate.side == side:
@@ -86,7 +104,7 @@ func _build_shell() -> void:
 	var ps := float(def.pillars.size)
 	var no_pillar_rects: Array[Rect2] = []
 	for s: Dictionary in def.get("sites", []):
-		if bool(s.get("no_pillars", false)):
+		if bool(s.get("no_pillars", false)) and not s.has("level"):
 			var r: Array = s.rect
 			no_pillar_rects.append(Rect2(float(r[0]) - ps, float(r[1]) - ps, (float(r[2]) - float(r[0])) + ps * 2.0, (float(r[3]) - float(r[1])) + ps * 2.0))
 	for p: Vector2 in CityLayout.pillar_positions(def):
@@ -161,19 +179,30 @@ func _build_city() -> void:
 	add_child(city)
 	var slab := float(def.slab_thickness)
 	var n := CityLayout.chunk_counts(def)
-	var tiles: Array = []
+	var tiles := { &"ground": [], &"ground_barren": [], &"ground_blue": [] }
 	for i in n.x:
 		for j in n.y:
 			var key := Vector2i(i, j)
 			var o := CityLayout.chunk_origin(def, key)
 			var c := CityLayout.CHUNK
-			tiles.append({ "c": Vector3(o.x + c * 0.5, -slab * 0.5, o.y + c * 0.5), "s": Vector3(c, slab, c), "seed": 0.0 })
+			var tile_zone := CityLayout.zone_at(def, Vector2(o.x + c * 0.5, o.y + c * 0.5))
+			var tile_mat: StringName = &"ground"
+			if tile_zone == CityLayout.Zone.UNBUILT or _near_unbuilt(o.y + c):
+				tile_mat = &"ground_blue"
+			elif tile_zone == CityLayout.Zone.ABANDONED:
+				tile_mat = &"ground_barren"
+			tiles[tile_mat].append({ "c": Vector3(o.x + c * 0.5, -slab * 0.5, o.y + c * 0.5), "s": Vector3(c, slab, c), "seed": 0.0 })
 			var items := CityLayout.generate_chunk(def, key)
 			layouts[key] = items
 			building_count += items.size()
 			var small: Array = []
 			var big: Array = []
 			for b: Dictionary in items:
+				if b.has("door"):
+					b.door["pos"] = InteriorKit.door_point(b)
+					if not door_buildings.has(key):
+						door_buildings[key] = []
+					door_buildings[key].append(b)
 				if (b.c as Vector3).y + (b.s as Vector3).y * 0.5 < SMALL_BUILDING_HEIGHT:
 					small.append(b)
 				else:
@@ -184,15 +213,48 @@ func _build_city() -> void:
 			# Same buildings at every distance: small ones dither-fade into fog
 			# before culling, large silhouettes never disappear.
 			if not small.is_empty():
-				SliceMaterials.add_multimesh(chunk, small, building_small_mat(), SMALL_VIS_END)
+				SliceMaterials.add_multimesh(chunk, small, building_small_mat(), SMALL_VIS_END, null, true)
 			if not big.is_empty():
-				SliceMaterials.add_multimesh(chunk, big, building_mat())
-	SliceMaterials.add_multimesh(city, tiles, &"ground")
+				SliceMaterials.add_multimesh(chunk, big, building_mat(), 0.0, null, true)
+			var fr := CityLayout.generate_frames(def, key)
+			if not (fr.cols as Array).is_empty():
+				frame_cols[key] = fr.cols
+				SliceMaterials.add_multimesh(chunk, (fr.cols as Array) + (fr.beams as Array), &"rust_steel")
+				if not (fr.decks as Array).is_empty():
+					SliceMaterials.add_multimesh(chunk, fr.decks, &"deck_pale")
+	for tile_mat: StringName in tiles:
+		if not (tiles[tile_mat] as Array).is_empty():
+			SliceMaterials.add_multimesh(city, tiles[tile_mat], tile_mat)
+	for district: Dictionary in def.districts:
+		if district.kind == "unbuilt":
+			var z_edge := lz + float(district.rect[1])
+			(SliceMaterials.get_mat(&"ground_blue") as ShaderMaterial).set_shader_parameter(&"relay_band", Vector2(z_edge - 110.0, z_edge + 90.0))
+			var zone := UnbuiltZone.build(self, district)
+			zone.name = "SITE-%s" % String(district.id)
+			add_child(zone)
 
 	# Avenue lamps toward the edge gate.
 	var poles: Array = []
 	var heads: Array = []
-	for p: Vector3 in CityLayout.avenue_lamps(def):
+	# Abandoned streets keep their posts; fewer and fewer still burn, then none.
+	var dark_heads: Array = []
+	var live: Array = []
+	for lp: Vector3 in CityLayout.avenue_lamps(def):
+		live.append(lp)
+	for bl: Dictionary in CityLayout.barren_lamps(def):
+		if bl.lit:
+			live.append(bl.p)
+		else:
+			var dp: Vector3 = bl.p
+			poles.append({ "c": dp + Vector3(0, 3.0, 0), "s": Vector3(0.25, 6.0, 0.25) })
+			dark_heads.append({ "c": dp + Vector3(0, 6.1, 0), "s": Vector3(0.7, 0.3, 0.7) })
+			var dkey := CityLayout.chunk_key_for(def, dp.x, dp.z)
+			if not dead_poles.has(dkey):
+				dead_poles[dkey] = []
+			dead_poles[dkey].append(dp)
+	if not dark_heads.is_empty():
+		SliceMaterials.add_multimesh(city, dark_heads, &"structure_fade_far")
+	for p: Vector3 in live:
 		poles.append({ "c": p + Vector3(0, 3.0, 0), "s": Vector3(0.25, 6.0, 0.25) })
 		heads.append({ "c": p + Vector3(0, 6.1, 0), "s": Vector3(0.7, 0.3, 0.7) })
 		var key := CityLayout.chunk_key_for(def, p.x, p.z)
@@ -225,6 +287,34 @@ func update_streaming(player_logical: PackedFloat64Array) -> void:
 		elif (not vertical_ok or dist > UNLOAD_RADIUS) and is_loaded:
 			loaded[key].queue_free()
 			loaded.erase(key)
+		# Enterable rooms stream on a much tighter radius, by distance to their doorway.
+		if vertical_ok and dist < InteriorKit.LOAD_RADIUS:
+			for b: Dictionary in door_buildings.get(key, []):
+				if not rooms.has(b.c) and p.distance_to(b.door.pos) < InteriorKit.LOAD_RADIUS:
+					_load_room(b)
+	for c: Vector3 in rooms.keys():
+		var room: InteriorRoom = rooms[c]
+		if not vertical_ok or p.distance_to(room.position) > InteriorKit.UNLOAD_RADIUS:
+			room.queue_free()
+			rooms.erase(c)
+
+
+## True when a ground tile ending at local z `z_end` reaches the never-built zone.
+func _near_unbuilt(z_end: float) -> bool:
+	for district: Dictionary in def.districts:
+		if district.kind == "unbuilt" and z_end > float(district.rect[1]) - 150.0:
+			return true
+	return false
+
+
+func _load_room(b: Dictionary) -> void:
+	if _rooms_root == null:
+		_rooms_root = Node3D.new()
+		_rooms_root.name = "Near_Rooms"
+		add_child(_rooms_root)
+	var room := InteriorRoom.build(self, b)
+	_rooms_root.add_child(room)
+	rooms[b.c] = room
 
 
 func _load_chunk(key: Vector2i) -> void:
@@ -233,7 +323,16 @@ func _load_chunk(key: Vector2i) -> void:
 	var body := StaticBody3D.new()
 	root.add_child(body)
 	for b: Dictionary in layouts[key]:
-		SliceMaterials.add_collision_box(body, b.c, b.s)
+		if b.has("door"):
+			# Hollow ground floor: solid mass around the room, doorway left open.
+			for bx: Array in InteriorKit.shell_collision(b):
+				SliceMaterials.add_collision_box(body, bx[0], bx[1])
+		else:
+			SliceMaterials.add_collision_box(body, b.c, b.s)
+	for col: Dictionary in frame_cols.get(key, []):
+		SliceMaterials.add_collision_box(body, col.c, col.s)
+	for dp: Vector3 in dead_poles.get(key, []):
+		SliceMaterials.add_collision_box(body, dp + Vector3(0, 3.0, 0), Vector3(0.25, 6.0, 0.25))
 	for lp: Vector3 in lamps.get(key, []):
 		SliceMaterials.add_collision_box(body, lp + Vector3(0, 3.0, 0), Vector3(0.25, 6.0, 0.25))
 		var light := SliceMaterials.make_lamp_light()
@@ -248,14 +347,17 @@ func is_cool() -> bool:
 
 
 func building_mat() -> StringName:
-	return &"building_cool" if is_cool() else &"building"
+	return &"city_cool" if is_cool() else &"city"
 
 
 func building_small_mat() -> StringName:
-	return &"building_small_cool" if is_cool() else &"building_small"
+	return &"city_small_cool" if is_cool() else &"city_small"
 
 
 func wall_mat() -> StringName:
+	for district: Dictionary in def.districts:
+		if district.kind == "abandoned" and district.has("rect") and is_cool():
+			return &"stack_wall_cool_dying"
 	return &"stack_wall_cool" if is_cool() else &"stack_wall"
 
 
@@ -274,7 +376,13 @@ func _build_sites() -> void:
 			"hydroponics": node = HydroponicSite.build(self, site)
 			"preserve": node = PreserveSite.build(self, site)
 			"glass_terrace": node = GlassTerraceSite.build(self, site)
+			"canal": node = CanalSite.build(self, site)
+			"garden": node = GardenSite.build(self, site)
+			"terraces": node = TerraceSite.build(self, site)
+			"construction": node = ConstructionSite.build(self, site)
 			_: push_error("Unknown site kind %s" % site.kind)
 		if node != null:
+			# Sites on another level of the stack ("level" metres above this floor).
+			node.position.y += float(site.get("level", 0.0))
 			node.name = site.id
 			add_child(node)

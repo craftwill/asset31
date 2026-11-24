@@ -49,21 +49,36 @@
       "slab_thickness": 60,
       "pillars": { "spacing": 1000, "size": 50 },
       "opening": { "side": "-x", "width": 600, "height": 420 },
+      "open_sides": ["+z"],
       "floors": [
         { "id": "F-0413-077", "name": "Floor 77", "elevation": 0, "height": 900 }
       ],
-      "districts": [],
+      "districts": [
+        { "id": "D-0413-DEEP", "kind": "residential", "center": [-1375, 312.5], "radius": 300, "doors": 0.9 },
+        { "id": "D-0413-BARREN", "kind": "abandoned", "rect": [-3000, 1000, 3000, 1750], "doors": 0.22 },
+        { "id": "D-0413-UNBUILT", "kind": "unbuilt", "rect": [-3000, 1750, 3000, 3000], "frames_from": 2350, "pipe_z": 2562.5,
+          "camps": [ { "x": -1366, "z": 2394, "levels": 4, "fires": [3], "side": -1 }, { "x": -1416, "z": 2706, "levels": 6, "fires": [2, 5], "side": 1 } ] }
+      ],
       "sites": [
         { "id": "SITE-GATE-W", "kind": "gate_arrival", "rect": [-3000, -290, -2740, 290] },
-        { "id": "SITE-HYDRO-413", "kind": "hydroponics", "rect": [-2940, -700, -2240, -100], "no_lamps": true, "no_pillars": true },
-        { "id": "SITE-PRESERVE-413", "kind": "preserve", "rect": [-2960, -1700, -2000, -700], "no_lamps": true, "no_pillars": true },
-        { "id": "SITE-GLASS-413", "kind": "glass_terrace", "rect": [-2740, 110, -2140, 430], "no_lamps": true, "no_pillars": true }
+        { "id": "SITE-HYDRO-413", "kind": "hydroponics", "rect": [-2940, -700, -2240, -100], "no_lamps": true, "no_pillars": true, "level": 18100 },
+        { "id": "SITE-PRESERVE-413", "kind": "preserve", "rect": [-2960, -1700, -2000, -700], "no_lamps": true, "no_pillars": true, "level": 18100 },
+        { "id": "SITE-GLASS-413", "kind": "glass_terrace", "rect": [-2740, 110, -2140, 430], "no_lamps": true, "no_pillars": true },
+        { "id": "SITE-CANAL-413", "kind": "canal", "rect": [-1625, 246.5, -1125, 253.5] },
+        { "id": "SITE-TERRACES-413", "kind": "terraces", "rect": [-1368, 194.5, -1319.5, 243] },
+        { "id": "SITE-WORKS-413U", "kind": "construction", "rect": [-1680.5, 632, -1444.5, 868] }
       ],
       "landmarks": [
         { "id": "LM-0413-GATE", "name": "West arrival gate", "position": [-3000, 0, 0] },
-        { "id": "LM-0413-HYDRO", "name": "Hydroponic Bay 413-A", "position": [-2827, 0, -100] },
-        { "id": "LM-0413-PRESERVE", "name": "Ecological Preserve 413-B", "position": [-2590, 0, -1200] },
-        { "id": "LM-0413-GLASS", "name": "Glass Curtain Terrace 413-S", "position": [-2560, 24, 148] }
+        { "id": "LM-0413-HYDRO", "name": "Hydroponic Bay 413-A", "position": [-2827, 18100, -100] },
+        { "id": "LM-0413-PRESERVE", "name": "Ecological Preserve 413-B", "position": [-2590, 18100, -1200] },
+        { "id": "LM-0413-GLASS", "name": "Glass Curtain Terrace 413-S", "position": [-2560, 24, 148] },
+        { "id": "LM-0413-CANAL", "name": "Condensate Canal 413", "position": [-1375, 0, 250] },
+        { "id": "LM-0413-WORKS", "name": "Squatters' Works 413-U", "position": [-1562, 0, 750] },
+        { "id": "LM-0413-BARREN", "name": "The Barren Blocks", "position": [-1375, 0, 1500] },
+        { "id": "LM-0413-PIPE", "name": "Return Line 413-S", "position": [-1375, 0, 2562.5] },
+        { "id": "LM-0413-PLAIN", "name": "The Empty Plates", "position": [-1375, 0, 2050] },
+        { "id": "LM-0413-BRINK", "name": "The Unclosed Edge", "position": [-1375, 0, 2990] }
       ]
     }
   ],
@@ -93,9 +108,12 @@
     { "id": "EL-GAP-3", "kind": "elevator_shaft", "position": [5350, 41000, -6800], "size": 34, "depth": 6000, "height": 4500, "cars": 3 },
     { "id": "EL-GAP-4", "kind": "elevator_shaft", "position": [6750, 41000, -11200], "size": 34, "depth": 6000, "height": 4500, "cars": 2 },
     { "id": "EXP-077", "kind": "inter_stack_express" },
+    { "id": "EL-0413-S", "kind": "brink_lift", "position": [7712, 41000, 3004], "top": 59100 },
+    { "id": "FLOOR-0413-TOP", "kind": "frozen_floor", "stack": "STK-0413", "level": 18100 },
     { "id": "BELFRY-0414", "kind": "void_bell_sanctum" },
     { "id": "STK-0414", "kind": "distant_stack", "position": [6200, 41000, -18100], "width": 5600, "depth": 5600, "below_depth": 8000, "above_height": 8000, "palette": "cool", "silhouette": 0 },
     { "id": "STK-0415", "kind": "distant_stack", "position": [4600, 41000, 18500], "width": 5400, "depth": 5400, "below_depth": 8000, "above_height": 7600, "palette": "warm", "silhouette": 1, "viaduct_dir": [0.05, -1.0], "viaduct_len": 5200 },
+    { "id": "STK-0418", "kind": "distant_stack", "position": [10600, 41000, 15400], "width": 5200, "depth": 5200, "below_depth": 7800, "above_height": 7800, "palette": "warm", "silhouette": 2 },
     { "id": "STK-0416", "kind": "distant_stack", "position": [22800, 41000, -14200], "width": 5800, "depth": 5800, "below_depth": 7500, "above_height": 7500, "palette": "cool", "silhouette": 2 },
     { "id": "STK-0417", "kind": "distant_stack", "position": [-14800, 41000, -16200], "width": 5200, "depth": 5200, "below_depth": 7500, "above_height": 7500, "palette": "warm", "silhouette": 1 }
   ],
@@ -114,12 +132,22 @@
     { "profile": "arrival", "box": [5950, 40990, -14740, 6060, 41040, -14620] },
     { "profile": "gap", "box": [5900, 40950, -14760, 6060, 41100, -240] },
     { "profile": "gap", "box": [3040, 39000, -3000, 6040, 43000, 3000] },
-    { "profile": "preserve", "box": [6120, 40995, -1700, 7080, 41860, -700] },
-    { "profile": "hydroponics", "box": [6140, 40995, -700, 6840, 41040, -100] },
+    { "profile": "preserve", "box": [6120, 59095, -1700, 7080, 59960, -700] },
+    { "profile": "hydroponics", "box": [6140, 59095, -700, 6840, 59140, -100] },
+    { "profile": "frozen", "box": [6040, 59000, -3100, 12120, 60000, 3100] },
+    { "profile": "barren", "box": [6040, 40990, 1000, 12120, 41950, 1375] },
+    { "profile": "barren_deep", "box": [6040, 40990, 1375, 12120, 41950, 1750] },
+    { "profile": "unbuilt", "box": [6040, 40990, 1750, 12120, 41950, 2960] },
+    { "profile": "brink", "box": [6040, 40900, 2960, 12120, 59000, 3200] },
     { "profile": "arrival", "box": [6340, 40995, 110, 6940, 41600, 430] },
     { "profile": "arrival", "box": [6040, 40990, -400, 6400, 41450, 400] }
   ],
   "ambience_profiles": {
+    "barren": { "layers": { "rumble": -10, "wind": -31, "vent": -36 }, "reverb": { "room": 0.95, "wet": 0.5, "damping": 0.4 }, "pitch": 0.86, "oneshot_interval": 3.6, "oneshot_db": -6.0 },
+    "barren_deep": { "layers": { "rumble": -7, "wind": -44, "cable_tension": -30 }, "reverb": { "room": 0.9, "wet": 0.38, "damping": 0.5 }, "pitch": 0.72, "oneshot_interval": 6.5, "oneshot_db": -8.0 },
+    "unbuilt": { "layers": { "rumble": -3, "wind": -15 }, "reverb": { "room": 0.8, "wet": 0.26, "damping": 0.7 }, "pitch": 0.72, "oneshot_interval": 22.0, "oneshot_db": -3.0 },
+    "brink": { "layers": { "wind": -7, "rumble": -8 }, "reverb": { "room": 0.8, "wet": 0.24, "damping": 0.65 }, "pitch": 0.78, "oneshot_interval": 30.0, "oneshot_db": -5.0 },
+    "frozen": { "layers": { "wind": -5, "cable_tension": -26, "rumble": -30 }, "reverb": { "room": 0.6, "wet": 0.2, "damping": 0.7 }, "pitch": 1.12, "oneshot_interval": 7.0, "oneshot_db": -10.0 },
     "city": { "layers": { "rumble": -11, "vent": -22 }, "reverb": { "room": 0.9, "wet": 0.35, "damping": 0.5 }, "oneshot_interval": 1.3 },
     "residential": { "layers": { "rumble": -13, "vent": -21, "market": -34 }, "reverb": { "room": 0.85, "wet": 0.3, "damping": 0.55 }, "oneshot_interval": 1.8, "oneshot_db": -4.0 },
     "room": { "layers": { "rumble": -18, "room_tone": -14, "vent": -32 }, "reverb": { "room": 0.12, "wet": 0.12, "damping": 0.85 }, "oneshot_interval": 2.4, "oneshot_db": -7.0 },

@@ -27,6 +27,42 @@ not a loose interpretation.
 | 8. Environment Polish, Distant Stacks & Inter-Stack Express (`EXP-077`) | Done: Preserved close 3 km **Twin-Stack Landmark** (`STK-0412`/`STK-0413`/`BR-077-A`) with 3D exterior cliff relief, added 4 distant stacks **16–19 km** away (`STK-0414`–`STK-0417`, `distant_stack.gd`, `48 km` far clip, `"gap"` haze), scaled Hydroponics (`700×600 m`) & Preserve (`960×1000×820 m`), clustered macro skyline + spires, Foundry crucible under-glow & crane girders, bolted Market signs, Gate markings, **`375s` Megablock Highway** (`highway_site.gd`, 2.2 km skywalk galleries + 4 ramps, `Ctrl+;`), **`400s` Misty Glass Curtain Wall & Terrace** (`glass_terrace_site.gd`, `curtain_wall.gdshader`, `Ctrl+'`), **`ZFightLint`** (`core/zfight_lint.gd`, `0` coplanar overlaps across 6,222 authored boxes), and full walkable 3-car **Inter-Stack Express `EXP-077`** (`inter_stack_express.gd`, `STA-0413-N` ↔ 14.4 km `VD-077-N` viaduct ↔ `STA-0414-S` Twin-Stack Overlook 17.5 km north, `110 m/s`, `0.16 G` S-curve, free-walk train-local rider lock, `Ctrl+.` / `Ctrl+/`) |
 | 9. The Religion of The Continuum & The Void Bell | Done: **`res://audio/religion/religious_long_bell.mp3`** wired through a dedicated **`VoidBell`** megalophobic audio bus (`LowPass` zone occlusion -> twin-stack `780 ms / 1480 ms` canyon stereo `Delay` + `1150 ms` feedback tail -> cavernous `Reverb` -> `Compressor`) with dual-layer pitched-down strike (`0.79–0.87x`) + delayed octave-lower structural sub-resonance (`0.62x`), loud & echoing between stacks (`gap`/`edge`/`shaft`/`arrival`), muffled indoors, spaced `2.7–5 min` outdoors / `5.5–9 min` indoors (plus `13–21 s` first-chasm prime and **`Ctrl+B`** instant trigger); **The Great Belfry of the Continuum (`BELFRY-0414`, `world/void_bell_sanctum.gd`, `Ctrl+\`)** inside `STK-0414` behind `STA-0414-S` recreating `reference_images/religion_concepts/religious_huge_bell.png` (colossal 88 m 12-sided 5-tier stepped Void Bell + 17 m swinging spherical clapper, interactive Resonance Strike Console, Pilgrim Overlook Platform with 2 silhouettes, walkable +18 m upper box-truss bridge, Chime Keeper's Altar, `NOTE-VOID-BELL-SANCTUM`, `CONT-VOID-BELL-RELIC`); **Sacred Symbol of The Continuum** (`world/continuum_emblem.gd`) at `BR-077-A` Mid-Span Wayside Shrine (`NOTE-CONTINUUM-BRIDGE`), Foundry North Bypass Shrine (`NOTE-CONTINUUM-SHRINE`), East/West Edge Gates, Mining Shaft 77-N Hub, `EL-DEEP-00` 41 km cage, and `STA-0414-S` portal |
 
+**Phase 10 — Enterable rooms (in progress):** ~34% of city buildings (90% in the `D-0413-DEEP` test
+district of `STK-0413`, quick-jump `Ctrl+,`) have a real ground-floor room behind a doorway and 1-3
+windows. `world/interior_kit.gd` plans the door on the facade's own 4 m bay grid; `facade.gdshader`
+paints those bays lit from afar and dither-cuts them out within ~46-58 m (per-instance MultiMesh
+`COLOR`, `city*` materials only); `StackRuntime` streams an `InteriorRoom` (`world/interior_room.gd`,
+six seeded templates: dwelling, bureau, workshop, depot, canteen, Continuum shrine) within 78 m and
+hollows the building's streamed collision. Rooms sit physically inside their building: no portal,
+no teleport. Room loot (`CONT-INT-*`) persists through `InteriorKit.loot_state`. Verify with
+`-- --roomtest` (walks the player through every doorway in the test district).
+
+**Phase 11 — STK-0413 journey (built, under user review; authority: `docs/STACK2_EXPLORATION_DESIGN.md`).**
+Read that doc before touching stack 2: it records the user's exploration principle and the fixed
+order of the journey. What exists, north to south along the x = -1375 street, then up:
+- `D-0413-DEEP` residential test district (90% doors, `Ctrl+,`), `canal_site.gd`, `terrace_site.gd`,
+  `construction_site.gd` (squatters' works, `Ctrl+K`). Sites share `world/sites/site_kit.gd`.
+- `D-0413-BARREN` band (z 1000-1750, `"kind": "abandoned"`, `Ctrl+L`): big dead slabs, ruined
+  rooms, lit windows fading with depth (`lit_fade_band`), lamp posts that go dark
+  (`CityLayout.barren_lamps`), dead ceiling lamps (`dead_band`).
+- `D-0413-UNBUILT` band (z 1750-3000, `"kind": "unbuilt"`): empty plain to `frames_from` (2350,
+  `Ctrl+P`), then clumped rust frames (`CityLayout.generate_frames`), the pipe and its crossings
+  (`world/unbuilt_zone.gd`, `Ctrl+U`), the open south edge (`"open_sides": ["+z"]`, `Ctrl+Y`).
+  Floor changes plate by plate (`ground.gdshader` `relay_band`).
+- Brink Lift `EL-0413-S`: `DeepRelayLift.build_custom` (the 41 km lift, generalised; open guide
+  mast instead of a shaft sleeve). Verify with `-- --lifttest`.
+- `FLOOR-0413-TOP` at 59,100 m (`world/frozen_floor.gd`, `Ctrl+T`): the frozen plate. Hydroponic
+  Bay 413-A and Preserve 413-B were moved up here with site `"level": 18100`; every hard-coded
+  coordinate for them in `main.gd` uses `UPPER_LY`.
+- Atmosphere moods `barren`, `plain`, `unbuilt`, `brink`, `frozen` (slow blends) also pick the
+  airborne particles; ambience profiles of the same names are in `mantle_slice.json`.
+- Cool stacks get three extra room types (bathhouse, laundry, water-ration hall) and wider rooms.
+- Clock: real time, a Mantle day is 24:39:35, shown only in the inventory header.
+- Reference frames 577s-594s were extracted for these zones. The source video lives untracked at
+  `reference_images/Life-Inside-a-SnapYT.App.mp4`; do not commit it.
+- Non-ASCII text in inline shell heredocs gets mangled on this machine; patch files that contain
+  characters like `·` from a UTF-8 script file instead.
+
 ## 3. Environment and commands
 - **Engine:** Godot **4.6.3 standard build**, at
   `C:\Users\william\Desktop\Godot_v4.6.3-stable_win64\Godot_v4.6.3-stable_win64_console.exe`.
@@ -42,6 +78,9 @@ Run everything from `game/` (`G` = the console exe above):
 "$G" --path .                                                       # play (Ctrl+1..0 quick-jump, Tab/I pack, E loot)
 "$G" --headless --path . -- --selftest                              # verify containers, grid inventory, survival, save/load
 "$G" --headless --path . --fixed-fps 60 -- --autopilot=12           # walks the full route; prints ARRIVED/FAILED
+"$G" --headless --path . --fixed-fps 60 -- --roomtest               # walks into every streamed room of the test district
+"$G" --headless --path . --fixed-fps 60 -- --lifttest               # rides the Brink Lift up and down with the player aboard
+"$G" --path . -- --shots=<abs dir> --shot-at=name:x,y,z,yaw,pitch   # ad-hoc stills (repeatable), logical coordinates
 "$G" --path . -- --shots=<abs dir> [--no-post] [--snap=0|1|2]       # 20 stills + UI shots + ms/frame
 "$G" --path . -- --planet-shots=<abs dir>                           # orbital 075s & 625s planet stills only
 "$G" --path . -- --motion=<abs dir>                                 # consecutive motion frames (market, vista, bridge, planet)
@@ -110,6 +149,14 @@ Describe problems found in the screenshots honestly.
 - **`source_color` tints above 1.0** get sRGB-decoded and blow up; check visually.
 - **Never enable `sync_to_physics = true` on `AnimatableBody3D` children of a `WorldAnchor`.** Godot 4 caches `last_valid_transform` in render space, so 1024 m floating-origin rebases desync the body from its anchor. Use `sync_to_physics = false` and carry any standing rider by the local delta in `_physics_process` (see `Lift`, `BridgeTram`, and `DeepRelayLift`).
 - **Never set `visibility_range_end` on a single MultiMesh spanning >1 km** (such as a 6 km stack's lamp poles or 3 km bridge posts): Godot evaluates `visibility_range_end` against the MultiMesh's AABB center, culling poles right beside the player near stack/bridge edges. Rely on the per-pixel camera distance fade in `surface.gdshader` (`&"structure_fade_*"`) instead.
+- **Enterable rooms: three things must agree.** The cut-outs in `facade.gdshader` (door 1.4 x 2.3 m,
+  windows = the bay's window rect), `InteriorKit` constants, and `InteriorRoom._shell()`. Trims
+  straddle the facade plane so the cut edge is never exposed; `InteriorKit.LOAD_RADIUS` must stay
+  above the shader's `door_cut_far`. Door plans hash the existing layout seed: never add RNG draws
+  to `CityLayout._try_building`, or the whole city reshuffles.
+- **Window interiors fade by the least-foreshortened axis** (`fw_min`), and the flat fallback is
+  brightness-matched near the hand-off (`mantle_window_mean`). Fading on `fw_max` made rooms flip
+  to flat bright rectangles whenever you looked up a tower or along a street.
 - **Headless exit warnings:** an "ObjectDB leaked" warning from audio playbacks under the dummy driver
   is test-only. Don't chase it.
 - **Sed-based multi-line edits on GDScript have broken code before.** Prefer real edits and re-run the import check.

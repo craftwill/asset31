@@ -20,6 +20,19 @@ const MAX_ACCEL := 4.5        # m/s^2 (~0.46 G max delta -> felt 0.54 G .. 1.46 
 const MAX_JERK := 1.8         # m/s^3 smooth S-curve ramp so starts/stops never jolt
 
 var relay_id := "EL-DEEP-00"
+# Per-lift configuration; the defaults are EL-DEEP-00. `build_custom` makes other lifts.
+var top_ly := TOP_LY
+var mid_ly := MID_LY
+var bot_ly := BOT_LY
+var has_mid := true
+var sleeve_kind := "shaft"        # "shaft" = lit cylindrical shaft, "mast" = open guide mast
+var sleeve_min := SLEEVE_MIN_Y
+var sleeve_max := SLEEVE_MAX_Y
+var title := "DEEP EXPRESS CAGE"
+var top_name := "Floor 77 Hub (41,000 m)"
+var mid_name := "Undercroft 76-B (40,780 m)"
+var bot_name := "Asset 31 Crust (0 m)"
+var strata: Array = []            # optional [[min altitude, name], ...] from high to low
 var lx := 3271.5
 var lz := -179.0
 var car_ly := TOP_LY
@@ -51,14 +64,50 @@ static func build(p_lx := 3271.5, p_lz := -179.0) -> DeepRelayLift:
 	return d
 
 
+## A second lift of the same make: two stations, its own names, an open guide mast.
+static func build_custom(cfg: Dictionary) -> DeepRelayLift:
+	var d := DeepRelayLift.new()
+	d.relay_id = String(cfg.id)
+	d.name = d.relay_id
+	d.lx = float(cfg.x)
+	d.lz = float(cfg.z)
+	d.top_ly = float(cfg.top)
+	d.bot_ly = float(cfg.bottom)
+	d.mid_ly = d.bot_ly
+	d.has_mid = false
+	d.sleeve_kind = "mast"
+	d.sleeve_min = d.bot_ly + SLEEVE_HALF
+	d.sleeve_max = d.top_ly - SLEEVE_HALF
+	d.title = String(cfg.title)
+	d.top_name = String(cfg.top_name)
+	d.bot_name = String(cfg.bottom_name)
+	d.strata = cfg.get("strata", [])
+	d.car_ly = d.bot_ly
+	d._prev_car_ly = d.bot_ly
+	d.target_ly = d.bot_ly
+	return d
+
+
 func _ready() -> void:
 	add_to_group(GROUP)
 	_build_cage()
-	_build_stratum_sleeve()
-	_build_station_console(TOP_LY, 2)
-	_build_station_console(MID_LY, 1)
-	_build_station_console(BOT_LY, -1)
+	if sleeve_kind == "mast":
+		_build_guide_mast()
+	else:
+		_build_stratum_sleeve()
+	_build_station_console(top_ly, 2)
+	if has_mid:
+		_build_station_console(mid_ly, 1)
+	_build_station_console(bot_ly, -1)
 	_sync_visuals()
+
+
+func _span_km() -> float:
+	return (top_ly - bot_ly) / 1000.0
+
+
+func _half_way() -> float:
+	return (top_ly + bot_ly) * 0.5
 
 
 func _build_cage() -> void:
@@ -123,6 +172,15 @@ func _build_cage() -> void:
 	cage_emblem.rotation.y = -PI * 0.5
 	car_body.add_child(cage_emblem)
 
+	if sleeve_kind == "mast":
+		# Open-air cage: hoist cables from a head frame, and shoes that grip the guide rails.
+		SliceMaterials.add_box(car_body, null, Vector3(0, 3.92, 0), Vector3(HALF_W * 1.6, 0.3, 0.5), &"structure", false)
+		for cx: float in [-0.5, 0.5]:
+			SliceMaterials.add_box(car_body, null, Vector3(cx, 4.07 + 60.0, 0), Vector3(0.07, 120.0, 0.07), &"structure", false)
+		for sz: float in [-1.0, 1.0]:
+			for sy: float in [0.2, 3.0]:
+				SliceMaterials.add_box(car_body, null, Vector3(HALF_W + 0.3, sy, sz * (HALF_W - 0.5)), Vector3(0.6, 0.3, 0.34), &"structure", false)
+
 	_motor = _make_audio("res://audio/tram_hum.wav", true, -6.0, 0.65)
 	_clunk = _make_audio("res://audio/lift_clunk.wav", false, -4.0, 0.82)
 
@@ -136,7 +194,7 @@ func _build_stratum_sleeve() -> void:
 	_sleeve_anchor = WorldAnchor.new()
 	_sleeve_anchor.name = "DeepShaftSleeve"
 	_sleeve_anchor.lx = lx - 11.5
-	_sleeve_anchor.ly = SLEEVE_MAX_Y
+	_sleeve_anchor.ly = sleeve_max
 	_sleeve_anchor.lz = lz - 1.0
 	_sleeve_anchor.visible = true
 	add_child(_sleeve_anchor)
@@ -188,6 +246,54 @@ func _build_stratum_sleeve() -> void:
 	SliceMaterials.add_multimesh(_sleeve_anchor, beacons, &"beacon_red")
 
 
+## Open guide mast for lifts that climb outside a stack: a 2,800 m lattice that tracks
+## the cage in 200 m steps like the shaft sleeve, with a rail of dim lamps.
+func _build_guide_mast() -> void:
+	_sleeve_anchor = WorldAnchor.new()
+	_sleeve_anchor.name = "GuideMast"
+	_sleeve_anchor.lx = lx - 11.5
+	_sleeve_anchor.ly = clampf(car_ly, sleeve_min, sleeve_max)
+	_sleeve_anchor.lz = lz - 1.0
+	add_child(_sleeve_anchor)
+	var steel: Array = []
+	var lamps: Array = []
+	var h := SLEEVE_HALF * 2.0
+	# Local offset of the cage centre inside the sleeve frame is (+11.5, 0, +1.0).
+	var c := Vector3(11.5, 0.0, 1.0)
+	var r := HALF_W + 1.5
+	for sx: float in [-1.0, 1.0]:
+		steel.append({ "c": c + Vector3(sx * r, 0.0, r), "s": Vector3(0.7, h, 0.7) })
+		steel.append({ "c": c + Vector3(sx * r, 0.0, -r - 3.0), "s": Vector3(0.7, h, 0.7) })
+	# Two guide rails hard against the cage's outer (east) side: what it actually runs on.
+	for sz: float in [-1.0, 1.0]:
+		steel.append({ "c": c + Vector3(HALF_W + 0.72, 0.0, sz * (HALF_W - 0.5)), "s": Vector3(0.3, h, 0.3) })
+	var y := -SLEEVE_HALF + 25.0
+	var k := 0
+	while y < SLEEVE_HALF:
+		steel.append({ "c": c + Vector3(0.0, y, r), "s": Vector3(r * 2.0 - 0.7, 0.5, 0.5) })
+		steel.append({ "c": c + Vector3(0.0, y + 0.6, -r - 3.0), "s": Vector3(r * 2.0 - 0.7, 0.5, 0.5) })
+		for sx: float in [-1.0, 1.0]:
+			steel.append({ "c": c + Vector3(sx * r, y + 1.2, -1.5), "s": Vector3(0.5, 0.5, r * 2.0 + 3.0 - 0.7) })
+		if k % 4 == 0:
+			# Tie back toward the stack every 100 m.
+			steel.append({ "c": c + Vector3(0.0, y + 1.8, -r - 3.0 - 6.0), "s": Vector3(0.6, 0.6, 12.0) })
+		y += 25.0
+		k += 1
+	# A cross-tie between the rails every 25 m, and a dim marker lamp every 100 m
+	# (no continuous lamp strip: it read as a bright line through the fog).
+	var ty := -SLEEVE_HALF + 12.5
+	var tk := 0
+	while ty < SLEEVE_HALF:
+		steel.append({ "c": c + Vector3(HALF_W + 0.72, ty, 0.0), "s": Vector3(0.2, 0.2, (HALF_W - 0.5) * 2.0 - 0.3) })
+		steel.append({ "c": c + Vector3((HALF_W + 0.72 + r) * 0.5, ty + 0.3, r * 0.5 + (HALF_W - 0.5) * 0.5), "s": Vector3(r - HALF_W - 0.72 + 0.2, 0.2, 0.2) })
+		if tk % 4 == 0:
+			lamps.append({ "c": c + Vector3(HALF_W + 0.95, ty + 0.5, 0.0), "s": Vector3(0.12, 0.4, 0.4) })
+		ty += 25.0
+		tk += 1
+	SliceMaterials.add_multimesh(_sleeve_anchor, steel, &"rust_steel")
+	SliceMaterials.add_multimesh(_sleeve_anchor, lamps, &"window_glow")
+
+
 func _build_station_console(station_ly: float, side: int) -> void:
 	var anc := WorldAnchor.new()
 	var tag := "F77" if side == 2 else ("MID" if side == 1 else "BOT")
@@ -210,6 +316,8 @@ func _build_station_console(station_ly: float, side: int) -> void:
 		txt = "DEEP EXPRESS CAGE · EL-DEEP-00\nUNDERCROFT 76-B (40,780 M) → CRUST (0 M)"
 	elif side < 0:
 		txt = "DEEP EXPRESS CAGE · EL-DEEP-00\nASSET 31 CRUST (0 M) ↔ FLOOR 77 (41,000 M)"
+	if sleeve_kind == "mast":
+		txt = "%s · %s\n%s" % [title, relay_id, "FLOOR 77  ↔  TOP FLOOR"]
 	SliceMaterials.add_sign(anc, Vector3(-0.07, 2.08, 0), txt, 0.0042, Color(1.0, 0.84, 0.52), -PI * 0.5)
 
 
@@ -232,34 +340,33 @@ func _make_audio(path: String, loop: bool, vol_db: float, pitch: float) -> Audio
 
 func _station_ly(side: int) -> float:
 	if side == 2:
-		return TOP_LY
+		return top_ly
 	if side == 1:
-		return MID_LY
-	return BOT_LY
+		return mid_ly
+	return bot_ly
 
 
 func _station_name(side: int) -> String:
 	if side == 2:
-		return "Floor 77 Hub (41,000 m)"
+		return top_name
 	if side == 1:
-		return "Undercroft 76-B (40,780 m)"
-	return "Asset 31 Crust (0 m)"
+		return mid_name
+	return bot_name
 
 
 func console_prompt(station_side: int) -> String:
 	if not powered:
-		return "[E] Install Salvaged Relay — Unlock 41 km Deep Express Cage"
+		return "[E] Install Salvaged Relay — Unlock %.0f km %s" % [_span_km(), title.capitalize()]
 	if station_side == 0:
 		if moving:
-			var rev_dest := "Floor 77 Hub (41,000 m)" if target_ly < 1.0 else "Asset 31 Crust (0 m)"
+			var rev_dest := top_name if target_ly < _half_way() else bot_name
 			return "[E] Reverse → %s  (now %.1f km)" % [rev_dest, car_ly / 1000.0]
-		var dest := "Asset 31 Crust (0 m)" if car_ly > 20000.0 else "Floor 77 Hub (41,000 m)"
-		var verb := "Descend" if car_ly > 20000.0 else "Ascend"
-		return "[E] %s 41.0 km → %s" % [verb, dest]
+		var going_down := car_ly > _half_way()
+		return "[E] %s %.1f km → %s" % ["Descend" if going_down else "Ascend", _span_km(), bot_name if going_down else top_name]
 	var want_ly := _station_ly(station_side)
 	if absf(car_ly - want_ly) < 1.0 and not moving:
-		return "41 km Deep Express Cage Docked — Step aboard & press [E] on panel"
-	return "[E] Call Deep Express Cage to %s" % _station_name(station_side)
+		return "%s Docked — Step aboard & press [E] on panel" % title.capitalize()
+	return "[E] Call %s to %s" % [title.capitalize(), _station_name(station_side)]
 
 
 func power_on() -> void:
@@ -275,19 +382,21 @@ func activate_console(station_side: int) -> String:
 	if station_side == 0:
 		if moving:
 			# Smoothly decelerate through 0 m/s at <= 0.46 G before reversing direction (never snap velocity).
-			target_ly = TOP_LY if target_ly < 1.0 else BOT_LY
+			target_ly = top_ly if target_ly < _half_way() else bot_ly
 			if _clunk != null:
 				_clunk.play()
 			_sync_visuals()
-			return "EL-DEEP-00 braking smoothly to reverse → %s" % ("Asset 31 Crust (0 m)" if target_ly < 1.0 else "Floor 77 Hub (41,000 m)")
-		target_ly = BOT_LY if car_ly > 20000.0 else TOP_LY
+			return "%s braking smoothly to reverse → %s" % [relay_id, bot_name if target_ly < _half_way() else top_name]
+		target_ly = bot_ly if car_ly > _half_way() else top_ly
 		moving = true
 		if _clunk != null:
 			_clunk.play()
 		if _motor != null:
 			_motor.play()
 		_sync_visuals()
-		return "EL-DEEP-00 descending 41.0 km to Asset 31 Crust (0 m)" if target_ly < 1.0 else "EL-DEEP-00 ascending 41.0 km to Floor 77 Hub (41,000 m)"
+		if target_ly < _half_way():
+			return "%s descending %.1f km to %s" % [relay_id, _span_km(), bot_name]
+		return "%s ascending %.1f km to %s" % [relay_id, _span_km(), top_name]
 	var want_ly := _station_ly(station_side)
 	if absf(car_ly - want_ly) < 1.0 and not moving:
 		return "Cage docked — step inside and press [E] on the east panel"
@@ -298,7 +407,7 @@ func activate_console(station_side: int) -> String:
 	if _motor != null and not _motor.playing:
 		_motor.play()
 	_sync_visuals()
-	return "Calling EL-DEEP-00 to %s..." % _station_name(station_side)
+	return "Calling %s to %s..." % [relay_id, _station_name(station_side)]
 
 
 func _attach_rider_if_aboard() -> void:
@@ -343,7 +452,7 @@ func _physics_process(delta: float) -> void:
 		if _sleeve_anchor != null:
 			var p := get_tree().get_first_node_in_group(&"player") as Node3D
 			var ref_y := WorldOrigin.to_logical(p.position)[1] if p != null else car_ly
-			var sy := clampf(roundf(ref_y / SLEEVE_STEP) * SLEEVE_STEP, SLEEVE_MIN_Y, SLEEVE_MAX_Y)
+			var sy := clampf(roundf(ref_y / SLEEVE_STEP) * SLEEVE_STEP, sleeve_min, sleeve_max)
 			if absf(_sleeve_anchor.ly - sy) > 1.0:
 				_sleeve_anchor.set_logical(lx - 11.5, sy, lz - 1.0)
 		return
@@ -413,7 +522,7 @@ func _physics_process(delta: float) -> void:
 	# Keep the 2,800 m cylindrical sleeve clamped flush between CRUST-00 (1,200 m) and EL-CYL-77 (38,800 m)
 	# with zero overlap and zero gap; world-Y shaft_wall & 100/25 m multiples make 200 m steps invisible.
 	if _sleeve_anchor != null:
-		var snapped_y := clampf(roundf(car_ly / SLEEVE_STEP) * SLEEVE_STEP, SLEEVE_MIN_Y, SLEEVE_MAX_Y)
+		var snapped_y := clampf(roundf(car_ly / SLEEVE_STEP) * SLEEVE_STEP, sleeve_min, sleeve_max)
 		if absf(_sleeve_anchor.ly - snapped_y) > 1.0:
 			_sleeve_anchor.set_logical(lx - 11.5, snapped_y, lz - 1.0)
 
@@ -428,6 +537,11 @@ func _physics_process(delta: float) -> void:
 
 
 func _stratum_name(alt: float) -> String:
+	if not strata.is_empty():
+		for st: Array in strata:
+			if alt > float(st[0]):
+				return String(st[1])
+		return String(strata[strata.size() - 1][1])
 	if alt > 39000.0:
 		return "UPPER MANTLE · F77-74"
 	if alt > 25000.0:
@@ -450,14 +564,16 @@ func _sync_visuals() -> void:
 		_motor.pitch_scale = 0.62 + clampf(spd / MAX_SPEED, 0.0, 1.0) * 0.48
 	var alt_i := int(roundf(car_ly))
 	if not powered:
-		_status_label.text = "EL-DEEP-00  ·  %d M\nOFFLINE · INSERT SALVAGED RELAY" % alt_i
+		_status_label.text = "%s  ·  %d M\nOFFLINE · INSERT SALVAGED RELAY" % [relay_id, alt_i]
 	elif moving:
 		var arrow := "▼" if _vel < -0.1 else ("▲" if _vel > 0.1 else "•")
 		var felt_g := (9.81 + _accel) / 9.81
-		_status_label.text = "EL-DEEP-00  ·  %d M  (%d M/S · %.2f G)\n%s %s" % [alt_i, int(roundf(spd)), felt_g, arrow, _stratum_name(car_ly)]
+		_status_label.text = "%s  ·  %d M  (%d M/S · %.2f G)\n%s %s" % [relay_id, alt_i, int(roundf(spd)), felt_g, arrow, _stratum_name(car_ly)]
 	else:
 		var dock := "FLOOR 77 HUB" if car_ly > 40900.0 else ("UNDERCROFT 76-B" if car_ly > 20000.0 else "CRUST OUTPOST 00")
-		_status_label.text = "EL-DEEP-00  ·  %d M\nONLINE · DOCKED %s" % [alt_i, dock]
+		if sleeve_kind == "mast":
+			dock = "TOP FLOOR" if car_ly > _half_way() else "FLOOR 77 EDGE"
+		_status_label.text = "%s  ·  %d M\nONLINE · DOCKED %s" % [relay_id, alt_i, dock]
 
 
 func serialize() -> Dictionary:
@@ -473,16 +589,16 @@ func serialize() -> Dictionary:
 
 func deserialize(d: Dictionary) -> void:
 	powered = bool(d.get("powered", true))
-	car_ly = clampf(float(d.get("car_ly", TOP_LY)), BOT_LY, TOP_LY)
+	car_ly = clampf(float(d.get("car_ly", top_ly)), bot_ly, top_ly)
 	moving = bool(d.get("moving", false))
-	target_ly = clampf(float(d.get("target_ly", TOP_LY)), BOT_LY, TOP_LY)
+	target_ly = clampf(float(d.get("target_ly", top_ly)), bot_ly, top_ly)
 	_vel = clampf(float(d.get("vel", 0.0)), -MAX_SPEED, MAX_SPEED)
 	_accel = clampf(float(d.get("accel", 0.0)), -MAX_ACCEL, MAX_ACCEL)
 	_prev_car_ly = car_ly
 	if car_anchor != null:
 		car_anchor.set_logical(lx, car_ly, lz)
 	if _sleeve_anchor != null:
-		var snapped_y := clampf(roundf(car_ly / SLEEVE_STEP) * SLEEVE_STEP, SLEEVE_MIN_Y, SLEEVE_MAX_Y)
+		var snapped_y := clampf(roundf(car_ly / SLEEVE_STEP) * SLEEVE_STEP, sleeve_min, sleeve_max)
 		_sleeve_anchor.set_logical(lx - 11.5, snapped_y, lz - 1.0)
 	if moving and _motor != null and not _motor.playing:
 		_motor.play()

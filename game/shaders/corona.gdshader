@@ -10,6 +10,10 @@ uniform float energy = 0.9;
 uniform float fade_near = 0.5;
 uniform float fade_start = 120.0;
 uniform float fade_end = 900.0;
+// Optional dimming when close (a far-off light that is nothing much once you reach it).
+uniform float near_dim = 1.0;
+uniform float near_dim_start = 0.0;
+uniform float near_dim_end = 0.0;
 
 varying float v_fade;
 
@@ -22,6 +26,9 @@ void vertex() {
 	c.xy += VERTEX.xy * sc.x;
 	POSITION = retro_snap(PROJECTION_MATRIX * c);
 	v_fade = (1.0 - smoothstep(fade_start, fade_end, d)) * smoothstep(0.0, fade_near, d);
+	if (near_dim_end > near_dim_start) {
+		v_fade *= mix(near_dim, 1.0, smoothstep(near_dim_start, near_dim_end, d));
+	}
 }
 
 void fragment() {

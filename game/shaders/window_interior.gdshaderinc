@@ -5,6 +5,29 @@
 //
 // Dependencies: #include "res://shaders/retro_common.gdshaderinc" before this file.
 
+// Average brightness of a window's interior relative to lit_col * flick * energy,
+// from the same per-window hashes as mantle_window_interior(). The flat far LOD
+// uses it so a window keeps its brightness when the 3D room hands over to it.
+float mantle_window_mean(vec2 sid, float zone, float is_lit) {
+	if (is_lit < 0.5) {
+		return 0.0;
+	}
+	float h_cat = hash12(sid + vec2(41.3, 17.1));
+	float h_curt = hash12(sid + vec2(73.9, 29.3));
+	if (h_curt > 0.80) {
+		return 0.44; // closed curtains / blinds
+	}
+	float g = 0.46;
+	if (zone > 1.5) {
+		g *= (h_cat < 0.52) ? 0.78 : ((h_cat < 0.82) ? 1.0 : 0.58);
+	} else if (zone > 0.5) {
+		g *= (h_cat < 0.82) ? 1.0 : 0.58;
+	} else {
+		g *= (h_cat < 0.76) ? 1.0 : ((h_cat < 0.88) ? 0.78 : 0.58);
+	}
+	return g * ((h_curt >= 0.30) ? 0.8 : 1.0);
+}
+
 // Evaluates one procedural room interior behind a window opening.
 //   f          : bay-local UV in [0, 1] x [0, 1] (window opening is centred at 0.5, half-size hw)
 //   hw         : half-size of window opening inside the bay (e.g. vec2(0.25, 0.25))
@@ -259,7 +282,8 @@ vec3 mantle_window_interior(
 
 	// Apply partial curtains / blinds + top rod over the interior view.
 	if (curt_mask > 0.5) {
-		vec3 curt_lit = (cat == 6) ? vec3(0.015, 0.012, 0.010) : (lit_col * 0.34 * curt_tex * cat_gain);
+		// Unlit rooms: the cloth only catches a trace of street light, it never glows.
+		vec3 curt_lit = (cat == 6) ? vec3(0.0030, 0.0026, 0.0022) : (lit_col * 0.34 * curt_tex * cat_gain);
 		interior = mix(interior, curt_lit, 0.88);
 	}
 	if (detail_k > 0.1 && h_curt >= 0.30 && wuv.y > 0.95) {

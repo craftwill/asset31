@@ -17,6 +17,7 @@ game/shots/
 
 # --- Third-party reference footage (not redistributed) -----------------
 reference_images/ref_video.mp4
+reference_images/*.mp4
 
 # --- OS / editors --------------------------------------------------------
 .DS_Store
