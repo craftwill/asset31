@@ -55,6 +55,7 @@ func _build(stack: StackRuntime, district: Dictionary) -> void:
 	_lift_pier(z_edge)
 	for camp: Dictionary in district.get("camps", []):
 		_squat(camp, rng, statics)
+	_pipe_encounter(rng, statics)
 	var crowd := Crowd.new()
 	add_child(crowd)
 	crowd.setup(statics, walkers, 4139, 0.5, 260.0)
@@ -118,6 +119,16 @@ func _squat(camp: Dictionary, rng: RandomNumberGenerator, statics: Array) -> voi
 	var side := float(camp.side)
 	var fires: Array = camp.fires
 	var cloths: Array[StringName] = [&"awning_dark", &"fabric_dark", &"awning_rust", &"cloth_teal"]
+	# Territory at ground level: a barricade across the foot of the ramp, a warning on
+	# the street side, belongings under the first floor, and someone who watches from
+	# behind a column until you have gone.
+	var street_x := o.x + (float(nx) * bay + 3.0 if side > 0.0 else -3.0)
+	_barrier(Vector3(o.x + bay - 1.5, 0.0, o.z - 2.2), Vector3(o.x + bay + 3.4, 0.0, o.z - 2.4), rng)
+	_barrier(Vector3(street_x, 0.0, o.z + 1.0), Vector3(street_x + side * 0.4, 0.0, o.z + float(nz) * bay - 1.0), rng)
+	_warning(Vector3(street_x + side * 2.2, 0.0, o.z + float(nz) * bay * 0.5), side * PI * 0.5, "NOT YOURS" if side > 0.0 else "NO FURTHER")
+	_belongings(Vector3(o.x + 2.6 * bay, 0.0, o.z + 2.4 * bay), rng)
+	var wx := o.x + (float(nx) * bay - 0.9 if side > 0.0 else 0.9)
+	add_child(SquatWatcher.create(Vector3(wx - side * 0.2, 0.0, o.z + 2.0 * bay + 0.9), side * -PI * 0.5 + PI, false, 0.13 + 0.2 * absf(side + 1.0)))
 	for ix in nx + 1:
 		for iz in nz + 1:
 			var p := o + Vector3(float(ix) * bay, 0.0, float(iz) * bay)
@@ -167,6 +178,79 @@ func _squat(camp: Dictionary, rng: RandomNumberGenerator, statics: Array) -> voi
 		box(t0 + Vector3(0.3, 0.12, 0.55), t0 + Vector3(1.5, 0.17, 1.25), &"fabric_dark")
 		box(t0 + Vector3(2.5, 0.0, 1.5), t0 + Vector3(3.1, 0.55, 2.1), &"wood_dark", true)
 		statics.append({ "p": t0 + Vector3(1.4, 0.0, 3.4), "yaw": rng.randf_range(-PI, PI) })
+
+
+## A board on two stakes with a few hand-painted words: a boundary, not a sign.
+func _warning(p: Vector3, yaw: float, text: String) -> void:
+	var b := Basis(Vector3.UP, yaw)
+	rbox(p + Vector3(0, 1.25, 0), Vector3(1.5, 0.62, 0.05), Vector3(0, yaw, _rng_tilt(p)), &"wood_dark")
+	for sx: float in [-0.6, 0.6]:
+		var q := p + b * Vector3(sx, 0.0, -0.06)
+		box(q + Vector3(-0.04, 0.0, -0.04), q + Vector3(0.04, 1.2, 0.04), &"structure")
+	SliceMaterials.add_sign(self, p + Vector3(0, 1.25, 0) + b * Vector3(0, 0, 0.04), text, 0.0075, Color(0.62, 0.2, 0.12), yaw)
+
+
+func _rng_tilt(p: Vector3) -> float:
+	return fposmod(sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453, 1.0) * 0.16 - 0.08
+
+
+## A low barricade of scavenged plate, crate and drum from `a` toward `b`, with gaps.
+func _barrier(a: Vector3, b: Vector3, rng: RandomNumberGenerator) -> void:
+	var d := b - a
+	var n := int(d.length() / 1.6)
+	var yaw := atan2(-d.z, d.x)
+	for i in n:
+		if rng.randf() < 0.22:
+			continue
+		var p := a + d * ((float(i) + 0.5) / float(n))
+		match rng.randi() % 4:
+			0:
+				rbox(p + Vector3(0, 0.6, 0), Vector3(1.5, 1.2, 0.08), Vector3(rng.randf_range(-0.25, 0.25), yaw, 0.0), &"plate", true, true)
+			1:
+				var cs := rng.randf_range(0.6, 0.9)
+				rbox(p + Vector3(0, cs * 0.5 - 0.01 * float(i), 0), Vector3(cs, cs, cs), Vector3(0, yaw + rng.randf_range(-0.4, 0.4), 0), &"wood_dark", true)
+			2:
+				SliceMaterials.add_cylinder(self, p, p + Vector3(0, 0.95, 0), 0.3, &"container_rust", 8)
+				SliceMaterials.add_collision_box(_body, p + Vector3(0, 0.48, 0), Vector3(0.6, 0.95, 0.6))
+			_:
+				rbox(p + Vector3(0, 0.75, 0), Vector3(1.5, 1.5, 0.07), Vector3(rng.randf_range(0.1, 0.3), yaw, 0.0), &"container_grey", true, true)
+
+
+## Things people live with: tools, a water drum, pots, a rag pole.
+func _belongings(p: Vector3, rng: RandomNumberGenerator) -> void:
+	SliceMaterials.add_cylinder(self, p, p + Vector3(0, 0.9, 0), 0.28, &"container_teal", 8)
+	SliceMaterials.add_collision_box(_body, p + Vector3(0, 0.45, 0), Vector3(0.56, 0.9, 0.56))
+	for k in 3 + rng.randi() % 3:
+		var o := p + Vector3(rng.randf_range(0.6, 2.2), 0.0, rng.randf_range(-1.0, 1.0))
+		var s := rng.randf_range(0.1, 0.22)
+		box(o + Vector3(-s, -0.02 - 0.03 * float(k), -s), o + Vector3(s, s * 1.3 + 0.004 * float(k), s), &"metal_light" if k % 2 == 0 else &"ceramic")
+	rbox(p + Vector3(2.6, 0.06, 0.4), Vector3(1.1, 0.07, 0.12), Vector3(0, rng.randf_range(0.0, 3.0), 0), &"structure")
+	rbox(p + Vector3(2.9, 0.05, -0.5), Vector3(0.7, 0.05, 0.09), Vector3(0, rng.randf_range(0.0, 3.0), 0), &"copper")
+	# Rag on a pole: the nearest thing to a flag.
+	box(p + Vector3(-0.9, 0.0, -0.9), p + Vector3(-0.84, 3.0, -0.84), &"structure")
+	box(p + Vector3(-0.84, 2.3, -0.88), p + Vector3(-0.2, 2.95, -0.86), &"cloth_red")
+
+
+## The camp by the main crossing of the pipe. Someone there looks up as you come,
+## puts a flashlight on you for a few seconds, and then goes back to their work.
+## Nothing else happens; a second set of planks 130 m west lets you go round.
+func _pipe_encounter(rng: RandomNumberGenerator, statics: Array) -> void:
+	var x := -1375.0 + 15.0
+	var zs := pipe_z - PIPE_D * 0.5
+	_camp(x, -1.0, rng, statics)
+	_barrier(Vector3(x - 7.0, 0.0, zs - 7.5), Vector3(x + 12.0, 0.0, zs - 8.0), rng)
+	_barrier(Vector3(x - 7.5, 0.0, zs - 7.0), Vector3(x - 7.0, 0.0, zs - 1.2), rng)
+	_belongings(Vector3(x + 3.0, 0.0, zs - 3.6), rng)
+	_warning(Vector3(x - 9.5, 0.0, zs - 9.0), 0.5, "OURS")
+	_warning(Vector3(-1375.0 - 6.0, 0.0, pipe_z - 18.0), -0.3, "KEEP WALKING")
+	# Pots warming on the pipe itself, bedding pushed up against it.
+	for k in 4:
+		var px := x - 2.0 + float(k) * 1.1
+		box(Vector3(px - 0.16, PIPE_Y + PIPE_D * 0.5 - 0.02, pipe_z - 0.16), Vector3(px + 0.16, PIPE_Y + PIPE_D * 0.5 + 0.2 + 0.03 * float(k), pipe_z + 0.16), &"metal_light" if k % 2 == 0 else &"copper")
+	box(Vector3(x + 6.0, 0.006, zs - 1.0), Vector3(x + 8.0, 0.14, zs - 0.1), &"fabric_dark")
+	add_child(SquatWatcher.create(Vector3(x - 3.0, 0.0, zs - 2.2), PI * 0.5, true, 0.41))
+	add_child(SquatWatcher.create(Vector3(x + 9.5, 0.0, zs - 1.6), 0.0, false, 0.77))
+	_crossing(-1375.0 - 130.0, false)
 
 
 ## A way over the pipe at stack-local `x`: a steel stile with rails, or bare planks.

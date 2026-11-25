@@ -928,7 +928,7 @@ func _handle_cmdline() -> void:
 			_run_roomtest()
 			return
 		elif arg == "--zfight-lint":
-			ZFightLint.run(self, 5)
+			ZFightLint.run(self, 14)
 			get_tree().quit(0)
 			return
 		elif arg.begins_with("--autopilot"):

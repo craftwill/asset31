@@ -44,6 +44,7 @@ func _build(w: float, d: float) -> void:
 	add_child(ground)
 	SliceMaterials.add_multimesh(ground, tiles, &"ground_ice")
 	_landing()
+	add_child(CathedralDeep.build())
 	_markers(rng)
 	for i in HUTS.size():
 		_hut(HUTS[i], i, rng)
@@ -82,6 +83,8 @@ func _markers(rng: RandomNumberGenerator) -> void:
 		x -= 50.0
 	pts.append(Vector2(DOOR.x, TURN_Z))
 	for i in pts.size():
+		if absf(pts[i].y - CathedralDeep.CENTRE.y) < 15.0 and absf(pts[i].x - CathedralDeep.CENTRE.x) < 15.0:
+			continue   # no post on the dais under the bell
 		var p := Vector3(pts[i].x + (3.0 if i % 2 == 0 else -3.0), 0.0, pts[i].y)
 		var lean := Vector3(rng.randf_range(-0.05, 0.05), 0.0, rng.randf_range(-0.05, 0.05))
 		rbox(p + Vector3(0, 2.2, 0), Vector3(0.16, 4.4, 0.16), lean, &"structure", true)
@@ -163,7 +166,7 @@ func _wrecks(w: float, d: float, rng: RandomNumberGenerator) -> void:
 			continue
 		if p.x > -2990.0 and p.x < -1960.0 and p.y > -1740.0 and p.y < -30.0:
 			continue
-		if p.y > 2960.0:
+		if p.y > 2960.0 or CathedralDeep.footprint().grow(maxf(sx, sz)).has_point(p):
 			continue
 		var o := Vector3(p.x, 0.0, p.y)
 		var sink := 0.3 + 0.002 * float(k)
